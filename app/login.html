@@ -1,0 +1,125 @@
+<!DOCTYPE HTML>
+<html> <!-- manifest="data.appcache" -->
+	<head>
+		<title>C.OS. Login</title>
+		<script src="/js/ajax.js"></script>
+		<link rel="stylesheet" type="text/css" media="screen" href="/css/style.css">
+		<link rel="stylesheet" type="text/css" media="screen" href="/css/bootstrap.min.css">
+		<link rel="shortcut icon" href="/favicon.ico" />
+	</head>
+	<body>
+		<div>
+			<h1 class="logintext">Login To Skreen</h1>
+			<h3 id="attemptNumber">Login attempt: 150 attempts max</h3>
+			<center>
+				<div id="login-passcode" style="display:none">
+					<span id="login-passcodeField" style="font-size: large; text-decoration: underline"></span>
+					<div>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='1'; login.passcodeHandles.update();">1</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='2'; login.passcodeHandles.update();">2</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='3'; login.passcodeHandles.update();">3</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='4'; login.passcodeHandles.update();">4</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='5'; login.passcodeHandles.update();">5</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='6'; login.passcodeHandles.update();">6</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='7'; login.passcodeHandles.update();">7</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='8'; login.passcodeHandles.update();">8</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='9'; login.passcodeHandles.update();">9</button>
+					</div>
+					<br>
+					<div>
+						<button class="sort" onclick="login.passcodeHandles.tracker = ' '; login.passcodeHandles.update();">Clear</button>
+						<button class="sort" onclick="login.passcodeHandles.enterPasscode(login.passcodeHandles.tracker);">Submit</button>
+						<hr>
+						<button class="sort" onclick="login.transition.next();">Switch Login Method</button>
+					</div>
+				</div>
+				<div id="login-email" style="display: none;">
+					<form action="/login/regular" method="post">
+						Email:
+						<br>
+						<input type="text" name="name">
+						<br>
+						Password:
+						<br>
+						<input type="text" name="password">
+						<br>
+						<input type="submit" value="Submit">
+					</form>
+					<br>
+					<div>
+						<hr>
+						<button class="sort" onclick="login.transition.next();">Switch Login Method</button>
+					</div>
+				</div>
+			</center>
+		</div>
+		<script>
+			const config = {
+				emailEID: "login-email",
+				passcodeEID: "login-passcode",
+				passcodeFieldID: "login-passcodeField"
+			}
+			const login = {
+				passcodeHandles: {
+					tracker: "",
+					update: function() {
+						document.getElementById(config.passcodeFieldID).innerHTML = login.passcodeHandles.tracker;
+					},
+					init: function() {
+						login.passcodeHandles.tracker = "";
+						login.passcodeHandles.update();
+					},
+					enterPasscode: function(passcode) {
+						fetch('http://localhost/login/passcode', {
+						  method: 'POST',
+						  headers: new Headers({'content-type': 'application/json'}),
+						  body: JSON.stringify({passcode: passcode})
+						})
+						.then(response => response.json())
+						.then(response => {
+							if (!response.error && !response.wait && response.message == "") {
+								login.redirectOK();
+							} else {
+								console.error("Recieved non-ok response from passcode: "+JSON.stringify(response));
+								alert("Recieved error when trying to login with passcode: "+JSON.stringify(response));
+							}
+						})
+						.catch(error => {
+							console.error('Error thrown in request:', error);
+							alert("Error thrown on passcode login: "+error);
+						});
+					}
+				},
+				transition: {
+					passcode: function() {
+						login.transition.state = "passcode";
+						document.getElementById(config.emailEID).style.display = "none";
+						document.getElementById(config.passcodeEID).style.display = "block";
+						document.getElementById(config.videoEID).style.display = "none";
+					},
+					email: function() {
+						login.transition.state = "email";
+						document.getElementById(config.emailEID).style.display = "block";
+						document.getElementById(config.passcodeEID).style.display = "none";
+						document.getElementById(config.videoEID).style.display = "none";
+					},
+					state: "video",
+					next: function() {
+						let lt = login.transition;
+						if (lt.state == "email") {
+							lt.passcode();
+						} else {
+							lt.email();
+						}
+					}
+
+				},
+				redirectOK: function() {
+					window.location = "client";
+				}
+			}
+			login.passcodeHandles.init();
+			login.transition.video();
+		</script>
+	</body>
+</html>

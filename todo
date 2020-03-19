@@ -1,0 +1,157 @@
+todo
+
+M: use cubic or quintic function to describe zoom for map (linear is bad)
+M: implement smart/nonsmart command matching
+m: implement said commands so that commands aren't said twice
+M: console of active users
+
+CHARTJS STATS PAGE LIKE IN TESLA
+odometer
+music waveform dynamic movement when music plays
+
+
+geographic tracking w/upload to ext domain
+advanced panel of "A" menu which allows you to refresh soundcloud cache
+sync settings with settings from "A" menu, use switchery.js for settings
+menu doesnt dissapear (music), just moves in to side and on mouseover it plays animation and extends
+
+and ofc...
+a actual routing/geofinder algorithm
+someday lol
+
+and also ofc...
+macchina code (when it arrives it is still "processing" as of 7/27/2018)
+yeet 7/31 it is shipped and on the way
+arrived aug 1
+
+playlist support
+
+cache neural network weights for more efficient starting of server(brain.js toFunction)
+
+better music UI/airplay HUD (like alert box maybe?)
+
+
+BUGS THAT I GOTTA FIX FOR TOMMORROW
+-no speech module
+-redundancy of music code
+-
+
+better favicon (the a is lame)
+
+
+
+use external sound card on rpi with audio device set inside of speaker({}) instance?
+
+spam filtering which blocks clients sending > 1 request per 0.1 seconds
+
+linux-like loading (LSB loading... etc (aesthetic))
+
+search tracks sc
+
+add rds/rdbs radio messages for radio through arduino
+
+sc user which has only goodtracks
+bluetooth
+
+video playback
+
+MAJ REQUIRED FEATURES BEFORE RELEASE:
+    -Navigation with turn-by-turn directions
+    -Offline map DONE
+    -Working directions (chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#ttl=Developer%20FAQ%20-%20OpenStreetMap%20Wiki&uri=https://wiki.openstreetmap.org/wiki/Developer_FAQ) and (chrome-extension://klbibkeccnjlkjkiokjodocebajanakg/suspended.html#ttl=Google%20Maps%20Example%20-%20OpenStreetMap%20Wiki&uri=https://wiki.openstreetmap.org/wiki/Google_Maps_Example)
+    -FM Broadcasting
+    -Legacy mode with python NOPE
+    -Piezo status info
+    -Bluetooth audio
+    -Xbee working
+    -Oled on RPI to give status DONE
+    -do opencv processing inside of nodejs server instead of inside python file (REQUIRED for rpi) DONE
+
+
+retry button on client side
+
+
+
+
+
+COOL FRAMEWORKS TO IMPLEMENT:
+robot.js for control of rpi https://github.com/octalmage/robotjs
+
+
+put frame data on image opencv
+
+node-festival for speech generation, or tacotron? tacotron
+
+chartjs accelerometer data, "blackbox" data
+https://www.chartjs.org/docs/latest/developers/updates.html
+http://www.chartjs.org/docs/latest/getting-started/
+
+
+Get path planning to work
+Tackle tensorflow in javascript for speech generation https://github.com/tensorflow/tfjs
+
+
+
+DONE stuff:
+
+progressbar.js for nice loading bar when client loads and for tracks DONE
+canvas gages for realtime sensor data? https://canvas-gauges.com/documentation/examples/ SOMEWHATDONE
+BIG CHANGE: remove socket.io and only use get/post requests DONE
+arduino sensor overloading & gps handling DONE
+electron framework? CANCELED
+data logging DONE
+constantly scan for invalid authkeys to prevent tampering NOPE
+state machine CANCELED
+GPS+MAGNETOMETER EXT from arduino DONE
+reverse proxy cache CANCELED
+username cache CANCELED
+load balancing CANCELED
+SC offline track images and track art DONE
+Get offline tilemaprenderer to work DONE
+also ability to switch soundcloud users DONE
+shuffle/notshuffle button DONE
+caching of soundcloud pages for low internet access DONE
+err loading track display DONE
+also dynamic hiding/showing of music menu DONE
+config nodemon to not restart when i modify globals.js DONE
+colors in console w/overriding prototype DONE
+use nodejs lib for progress bars in console DONE
+Finish CLEANING UP cosserver.JS: DONE
+    - clean up init process (initweb and initpython functions) KINDA-DONE
+    - add allemit and allon to socketUtils DONE
+    - 
+music:
+
+server onstartup looks for cache file, if it finds it it sends it to server DONE
+else it requests it and saves the results DONE
+once tracks are loaded, it loads the tracks into mp3 files DONE
+better 404 page DONE (slightly)
+FIX BUG WITH LOOP & TRACKS NOT WRAPPING DONE
+use a timed listener to get song playing length on client side instead of bytes through decoder DONE
+changescuser now has to go to server DONE
+cleaned up globals file DONE
+finish fixing cleaning directories (ESSENTIAL) DONE
+DebugMode for all modules DONE
+BIG CHANGE: stream soundcloud on nodejs side with option to switch to client side CANCELED
+volume progressbar or indicator of some sort DONE
+STUFF FOR TMR (again):
+- airplay volume support DONE
+
+cosserver wrapper that is like a watchdog - pings it every few seconds and checks if it is ok, then kills it if its not DONE
+
+update script that automatically updates (clones into new folder, compares modified date or length and replaces files) DONE
+
+apple music (airplay) DONE
+
+- "disable" buttons when airplay is playing client side DONE
+
+time since forward or backward button pressed to prevent crashing DONE
+
+implement track type handling (client vs python) UNNEEDED, python is gone now
+
+loglevels for console.log, warn and error DONE
+
+
+Portable ideas:
+'black box' under seat
+lithio battery under seat

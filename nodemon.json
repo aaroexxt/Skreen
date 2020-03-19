@@ -1,0 +1,15 @@
+{
+    "verbose": false,
+    "ignore": [
+        "**.json",
+        "node_modules/**/node_modules",
+        "/data/**",
+        "app/**"
+    ],
+    "e": ["js"],
+    "delay": 1000,
+    "execMap": {
+        "rb": "ruby",
+        "pde": "processing --sketch={{pwd}} --run"
+    }
+}

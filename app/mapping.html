@@ -1,0 +1,307 @@
+<!DOCTYPE HTML>
+<html> <!-- manifest="data.appcache" -->
+	<head>
+		<title>C.OS. MapTest</title>
+		<link rel="shortcut icon" href="/favicon.ico" />
+		<link rel="stylesheet" type="text/css" media="screen" href="/css/leaflet.css">
+		<script src="/js/leaflet.js"></script>
+		<script src="/js/progressbar.min.js"></script>
+	</head>
+	<body>
+		<div id="map" style="opacity: 0"></div>
+		<div id="loading" style="z-index: 1000000000; position: absolute; top: 0; left: 0;">
+			<h3>Loading Map Data...</h3>
+			<div id="loadBar"></div>
+		</div>
+		<style type="text/css">
+			.custom-popup .leaflet-popup-content-wrapper {
+				background:#2c3e50;
+				color:#fff;
+				font-size:16px;
+				line-height:24px;
+				border-radius: 0px;
+			}
+				.custom-popup .leaflet-popup-content-wrapper a {
+				color:rgba(255,255,255,0.1);
+			}
+				.custom-popup .leaflet-popup-tip-container {
+				width:30px;
+				height:15px;
+			}
+				.custom-popup .leaflet-popup-tip {
+				background: transparent;
+				border: none;
+				box-shadow: none;
+			}
+		</style>
+		<script>
+			//return "https://tile.openstreetmap.org/" + zoom + "/" + x + "/" + coord.y + ".png";
+			document.getElementById("map").style.height = window.innerHeight+"px";
+			var loadBar = new ProgressBar.Line('#loadBar', {
+				strokeWidth: 2,
+				easing: 'easeInOut',
+				duration: 1400,
+				color: '#FFEA82',
+				trailColor: '#eee',
+				trailWidth: 1,
+				svgStyle: {width: '100%', height: '100%'},
+				text: {
+					style: {
+					  // Text color.
+					  // Default: same as stroke color (options.color)
+					  color: '#999',
+					  position: 'absolute',
+					  right: '0',
+					  top: '30px',
+					  padding: 0,
+					  margin: 0,
+					  transform: null
+					},
+					autoStyleContainer: false
+				},
+				from: {color: '#FFEA82'},
+				to: {color: '#ED6A5A'},
+				step: (state, bar) => {
+					bar.setText(Math.round(bar.value() * 100) + ' %');
+				}
+			});
+        	
+
+        	L.GridLayer.customGeoRender = L.GridLayer.extend({
+			    options: {
+			        async: false
+			    },
+
+			    initialize: function (options) {
+			        L.setOptions(this, options);
+			        L.GridLayer.prototype.initialize.call(this, options);
+			    },
+
+
+			    createTile: function (coords) {
+			        // create a <canvas> element for drawing
+			        var tile = L.DomUtil.create('canvas', 'leaflet-tile');
+			        // setup tile width and height according to the options
+			        var size = this.getTileSize();
+			        tile.width = size.x;
+			        tile.height = size.y;
+			        // get a canvas context and draw something on it using coords.x, coords.y and coords.z
+			        var ctx = tile.getContext('2d');
+			        // return the tile so it can be rendered on screen
+			        fetch('http://'+window.location.host+'/api/map/annotationTile/'+this.options.layerIndex+"/"+coords.z+'/'+coords.x+"/"+coords.y, {
+						method: 'GET'
+					})
+					.then(response => response.json())
+					.then(response => {
+						if (!response.error && !response.wait) { //ok
+							var features = response.message ? response.message : [];
+							console.log(features.length+" features loaded")
+							for (var i = 0; i < features.length; i++) {
+					            var feature = features[i];
+					            var text = feature.tags;
+					            this.drawFeature(ctx, feature, text);
+					        }
+						} else if (!response.error) {
+							console.log("Need to wait for server to be ready...");
+						} else {
+							console.error(response.message);
+						}
+					})
+			        
+			        return tile;
+			    },
+
+
+			    drawFeature: function (ctx, feature, text) {
+			        var typeChanged = type !== feature.type,
+			            type = feature.type;
+			        ctx.beginPath();
+			        if (this.options.style) this.setStyle(ctx, this.options.style);
+			        //console.log(feature.tags)
+			        if (type === 2 || type === 3) {
+			            for (var j = 0; j < feature.geometry.length; j++) {
+			                var ring = feature.geometry[j];
+			                for (var k = 0; k < ring.length; k++) {
+			                    var p = ring[k];
+			                    if (k) ctx.lineTo(p[0] / 16.0, p[1] / 16.0);
+			                    else ctx.moveTo(p[0] / 16.0, p[1] / 16.0);
+			                }
+			            }
+			        } else if (type === 1) {
+			            for (var j = 0; j < feature.geometry.length; j++) {
+			                var p = feature.geometry[j];
+			                //console.log(p[0]/16, p[1]/16)
+			                ctx.arc(p[0] / 16.0, p[1] / 16.0, 2, 0, Math.PI * 2, true);
+			                if (text && text.name) {
+			                	ctx.font="10px Georgia";
+			                	ctx.fillStyle = "#000";
+			                	//ctx.fillText(text.name, p[0] / 16.0, p[1] / 16.0);
+			                	if (this.options.style) this.setStyle(ctx, this.options.style);
+			                }
+			            }
+			        }
+			        if (type === 3) ctx.fill(this.options.style.fillRule || 'evenodd');
+
+			        ctx.stroke();
+			    },
+
+			    setStyle: function (ctx, style) {
+			        var stroke = style.stroke || true;
+			        if (stroke) {
+			            ctx.lineWidth = style.weight || 5;
+			            var color = this.setOpacity(style.color, style.opacity);
+			            ctx.strokeStyle = color;
+
+			        } else {
+			            ctx.lineWidth = 0;
+			            ctx.strokeStyle = {};
+			        }
+			        var fill = style.fill || true;
+			        if (fill) {
+			            ctx.fillStyle = style.fillColor || '#03f';
+			            var color = this.setOpacity(style.fillColor, style.fillOpacity);
+			            ctx.fillStyle = color;
+			        } else {
+			            ctx.fillStyle = {};
+			        }
+			    },
+
+			    setOpacity: function (color, opacity) {
+			        if (opacity) {
+			            var color = color || '#03f';
+			            if (color.iscolorHex()) {
+			                var colorRgb = color.colorRgb();
+			                return "rgba(" + colorRgb[0] + "," + colorRgb[1] + "," + colorRgb[2] + "," + opacity + ")";
+			            } else {
+			                return color;
+			            }
+			        } else {
+			            return color;
+			        }
+
+			    }
+			})
+
+			L.gridLayer.customGeoRenderer = function (options) {
+			    return new L.GridLayer.customGeoRender(options);
+			};
+
+			String.prototype.iscolorHex = function () {
+			    var sColor = this.toLowerCase();
+			    var reg = /^#([0-9a-fA-f]{3}|[0-9a-fA-f]{6})$/;
+			    return reg.test(sColor);
+			}
+
+
+			String.prototype.colorRgb = function () {
+			    var sColor = this.toLowerCase();
+			    if (sColor.length === 4) {
+			        var sColorNew = "#";
+			        for (var i = 1; i < 4; i += 1) {
+			            sColorNew += sColor.slice(i, i + 1).concat(sColor.slice(i, i + 1));
+			        }
+			        sColor = sColorNew;
+			    }
+			    var sColorChange = [];
+			    for (var i = 1; i < 7; i += 2) {
+			        sColorChange.push(parseInt("0x" + sColor.slice(i, i + 2)));
+			    }
+			    return sColorChange;
+			};  
+
+
+
+			//Real code starts here
+			let layerInfo = [];
+			var loadListener = setInterval( () => {
+				fetch('http://'+window.location.host+'/api/map/ready', {
+					method: 'GET'
+				})
+				.then(response => response.json())
+				.then( response => {
+					function wrapUp() {
+						document.getElementById("map").style.opacity = 1;
+						clearInterval(loadListener);
+						document.getElementById("loading").parentNode.removeChild(document.getElementById("loading"));
+					}
+
+
+					if (!response.error && !response.wait) {
+						console.log("Loaded map; rendering");
+						let layerData = response.message;
+						console.log("Creating "+layerData.length+" layers...");
+						for (var i=0; i<layerData.length; i++) {
+							let opts = {
+								layerIndex: layerData[i].index,
+							    style: {
+							        fillColor: layerData[i].fillColor,//'#1EB300',
+							        fillOpacity: layerData[i].opacity,
+							        color: layerData[i].strokeColor,
+							        weight: layerData[i].strokeWeight
+							    }
+							};
+							let canvasLayer = L.gridLayer.customGeoRenderer(opts).addTo(map);
+						}
+						wrapUp();
+					} else if (!response.error) {
+						console.log("loading: "+response.message+"%");
+						loadBar.animate(Number(response.message)*0.01);
+					} else {
+						wrapUp();
+					}
+				})
+				
+			},1200)
+
+			var map = L.map('map', {
+				center: [37.57,-122.34],
+				zoom: 13,
+				maxZoom: 15,
+				rotate: true
+			});
+			//L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png?{foo}', {foo: 'bar', attribution: '<a href="http://osm.org/copyright">OpenStreetMap</a>'}).addTo(map);
+			L.tileLayer("http://"+window.location.host+'/api/map/dataTile/{z}/{x}/{y}.png', {foo: 'bar', attribution: '<a href="http://osm.org/copyright">OpenStreetMap</a>'}).addTo(map);
+
+			
+
+
+        	function getVisibleTilesCoords(map) {
+		      
+		      // get bounds, zoom and tileSize        
+		      var bounds = map.getPixelBounds();
+		      var zoom = map.getZoom();
+		      var tileSize = 256;
+		      var tileCoordsContainer = [];
+
+
+		      // get NorthWest and SouthEast points
+		      var nwTilePoint = new L.Point(Math.floor(bounds.min.x / tileSize),
+		          Math.floor(bounds.min.y / tileSize));
+
+		      var seTilePoint = new L.Point(Math.floor(bounds.max.x / tileSize),
+		          Math.floor(bounds.max.y / tileSize));
+
+		      // get max number of tiles in this zoom level
+		      var max = map.options.crs.scale(zoom) / tileSize; 
+
+		      // enumerate visible tiles 
+		      for (var x = nwTilePoint.x; x <= seTilePoint.x; x++) 
+		      {
+		         for (var y = nwTilePoint.y; y <= seTilePoint.y; y++) 
+		         {
+
+		            var xTile = Math.abs(x % max);
+		            var yTile = Math.abs(y % max);
+		            
+		            tileCoordsContainer.push({x: xTile, y: yTile});
+
+		            //console.log('tile ' + xTile + ' ' + yTile);
+		          }
+		      }
+		      
+		      return tileCoordsContainer;
+		      
+		    };
+    </script>
+	</body>
+</html>

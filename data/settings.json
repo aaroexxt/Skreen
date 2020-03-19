@@ -1,0 +1,97 @@
+{
+    "PRODUCTION": false,
+    "loginMessage": ["Welcome to\n"," ██████╗ █████╗ ██████╗      ██████╗ ███████╗    ██╗   ██╗  ██╗", "██╔════╝██╔══██╗██╔══██╗    ██╔═══██╗██╔════╝    ██║   ██║ ███║", "██║     ███████║██████╔╝    ██║   ██║███████╗    ██║   ██║ ╚██║", "██║     ██╔══██║██╔══██╗    ██║   ██║╚════██║    ╚██╗ ██╔╝  ██║", "╚██████╗██║  ██║██║  ██║    ╚██████╔╝███████║     ╚████╔╝██╗██║", " ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝     ╚═════╝ ╚══════╝      ╚═══╝ ╚═╝╚═╝","\nBy Aaron Becker\n"],
+
+    "information": {
+        "frontendVersion": 1,
+        "backendVersion": 1,
+        "heartbeatMS": 60000,
+        "dynamicMusicMenu": true
+    },
+    "settings": {
+        "maxLoginAttempts": 10,
+        "disableLogin": false,
+
+        "faviconDirectory": "/app/assets/images/favicon.ico",
+        "defaultFileDirectory": "/app",
+        "defaultDataDirectory": "/data",
+        "defaultClientFile": "client.html",
+        "defaultLoginFile": "login.html",
+        "assetsDirectory": "/app/assets",
+
+        "logLevel": 4,
+        "logDirectory": "logs",
+        "maxKeptFiles": 10,
+        "maxLogFileLength": 10000000,
+        "logValidationInterval": 60000,
+        "loggerBaseFunctions": ["log", "warn", "error", "iinfo", "ilog"],
+
+        "arduinoBaudRate": 115200,
+        "arduinoSensorUpdateInterval": 1000,
+        "arduinoSensorOverloadedInterval": 2000,
+        "arduinoSensorOverloadedTimeout": 10000,
+
+        "jsonDBPath": "data/userDB.json",
+
+        "serverPort": 80,
+
+        "maxRegularAttempts": 100,
+        "maxPasscodeAttempts": 50
+    },
+    "soundcloudSettings": {
+        "clientID": "3425f0db5f4339b4edbef6afeeb23264",
+        "defaultUsername": "bexterdubs",
+        "currentUser": "bexterdubs",
+
+        "soundcloudTrackCacheFile": "data/SCcache/soundcloudTrackCache",
+        "soundcloudUserdataCacheFile": "data/SCcache/soundcloudUserdataCache",
+        "soundcloudTrackCacheDirectory": "data/SCcache/tracks",
+        "soundcloudArtworkCacheDirectory": "data/SCcache/artwork",
+        "soundcloudWaveformCacheDirectory": "data/SCcache/waveform",
+        "noArtworkUrlPrefix": "/app/assets/",
+
+        "soundcloudCacheExpiryTime": 604800000,
+
+        "initErrorDelay": 1000,
+        "initMaxAttempts": 3,
+        "tracksToLoad": -1,
+
+        "noArtworkUrl": "/images/noAlbumArt.png",
+        "defaultVolume": 50,
+        "currentVolume": 50,
+        "autoplayTrack": true,
+        "volStep": 10,
+        "maxLikedTracks": 0,
+        "maxTracksInRequest": 200,
+        "tracksPerRequest": 40,
+        "requestConstraint": 10,
+        "trackUpdateInterval": 0,
+        "nextTrackShuffle": false,
+        "nextTrackLoop": false,
+        "userID": 0,
+        "firstPlay": true,
+
+        "tracksFromCache": false,
+
+        "likedTracks": [],
+        "trackList": [],
+
+        "requestTimeout": 21000,
+        "soundcloudStatus": {"ready": false, "error": false, "message": ""},
+        "playMusicOnServer": true,
+        "minInteractionWaitTime": 2000
+    },
+    "neuralSettings": {
+        "dataBasePath": "data/neural",
+        "commandMatching": {
+            "dataBasePath": "data/neural/match",
+            "commandGroupPath": "../data/neural/match/commandGroup.js",
+            "commandsPath": "commands.json",
+            "responsesPath": "responses.json",
+            "targetError": 0.01
+        }
+    },
+    "airplaySettings": {
+        "serverName": "CarLOS"
+    }
+}
