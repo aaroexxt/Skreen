@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 /*
-* COSserver.js by Aaron Becker
+* skreen.js by Aaron Becker
 * Skreen Node.JS Server
 *
 * Dedicated to Marc Perkel
