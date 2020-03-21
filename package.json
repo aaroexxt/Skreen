@@ -1,0 +1,28 @@
+{
+  "name": "skreen",
+  "version": "1.0.0",
+  "description": "Home automation via custom REST API",
+  "main": "skreen.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "sudo node skreen.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aaroexxt/Skreen.git"
+  },
+  "keywords": [
+    "nodejs",
+    "arduino",
+    "automation",
+    "home"
+  ],
+  "author": "Aaron Becker",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aaroexxt/Skreen/issues"
+  },
+  "homepage": "https://github.com/aaroexxt/Skreen#readme"
+}
