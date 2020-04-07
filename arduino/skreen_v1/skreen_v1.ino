@@ -48,10 +48,17 @@ const char* commandValueChar="|";
 
 boolean connected = false;
 boolean running = true;
-boolean ledsOn = false;
+boolean ledsOn = true;
 
 unsigned long lastSendTime = 0;
 const int sendConnectInterval = 1000;
+
+const int numReadings = 3;
+
+int readings[numReadings];      // the readings from the analog input
+int readIndex = 0;              // the index of the current reading
+int total = 0;                  // the running total
+int average = 0;                // the average
 
 void debugPrintln(char *s) {
   if (DEBUGMODE) {
@@ -96,10 +103,14 @@ void setup() {
       FastLED.show();
       delay(25);
     }
+
+    for (int thisReading = 0; thisReading < numReadings; thisReading++) {
+      readings[thisReading] = 0;
+    }
 }
 
 void loop() { 
-  if (running) {
+  /*if (running) {
     String input = Serial.readString();
     input.trim();
     if (connected == false) { //Are we connected to the server?
@@ -117,7 +128,7 @@ void loop() {
     } else {
       processCommand(input); //This will recurse
     }
-  }
+  }*/
 
   unsigned long time = millis();
 
@@ -143,6 +154,31 @@ void loop() {
 
     // Get the pitch and brightness to compute the new color
     int newPitch = (analogRead(PITCH_PIN)*2) + shiftC;
+    //Serial.print("BRIGHT: ");
+
+
+
+      // subtract the last reading:
+    total = total - readings[readIndex];
+    // read from the sensor:
+    readings[readIndex] = analogRead(PITCH_PIN);
+    // add the reading to the total:
+    total = total + readings[readIndex];
+    // advance to the next position in the array:
+    readIndex = readIndex + 1;
+
+    // if we're at the end of the array...
+    if (readIndex >= numReadings) {
+      // ...wrap around to the beginning:
+      readIndex = 0;
+    }
+
+    // calculate the average:
+    average = total / numReadings;
+    Serial.println(average);
+    Serial.print(" ");
+    //Serial.print(" PITCH: ");
+    //Serial.println(analogRead(PITCH_PIN));
     RGBColor nc = pitchConv(newPitch, analogRead(BRIGHT_PIN));
 
     // Set the left most updateLEDs with the new color
