@@ -78,8 +78,7 @@
 
         "requestTimeout": 21000,
         "soundcloudStatus": {"ready": false, "error": false, "message": ""},
-        "playMusicOnServer": true,
-        "minInteractionWaitTime": 2000
+        "minInteractionWaitTime": 3000
     },
     "neuralSettings": {
         "dataBasePath": "data/neural",
@@ -92,6 +91,7 @@
         }
     },
     "airplaySettings": {
-        "serverName": "CarLOS"
+        "serverName": "CarLOS",
+        "enabled": false
     }
 }

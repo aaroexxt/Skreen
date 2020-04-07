@@ -297,7 +297,7 @@ var arduinoUtils = require('./drivers/arduino.js'); //require the driver
 //console.log("Serial device from start script: "+serialDevice);
 arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
 	console.importantLog("Arduino driver initialized successfully (1/4)");
-	arduinoUtils.findArduino().then(arduinoAddr) {
+	arduinoUtils.findArduino().then(arduinoAddr => {
 		console.importantLog("Arduino located on serial port successfully (2/4)");
 		arduinoUtils.connectArduino(serialDevice, runtimeSettings, runtimeInformation).then( () => {
 			console.importantLog("Arduino connected successfully (3/4)");
@@ -310,11 +310,11 @@ arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
 		}).catch( err => {
 			console.error("Failed to connect to arduino for the following reason: '"+err+"'");
 		});
-	}.catch(err) => {
+	}).catch(err => {
 		console.warn("[WARNING] Server running without arduino. Errors may occur. Once you have connected an arduino, you have to relaunch the start script.");
 		console.importantInfo("ARDU INIT ERR: NO ARDU CONNECTED (reason: "+err+")");
 		arduinoUtils.setArduinoFakeClass();
-	}
+	});
 }).catch( err => {
 	console.error("Arduino driver failed to initialize for the following reason: '"+err+"'");
 }) //setup arduino object and libs
@@ -369,7 +369,7 @@ process.on('SIGINT', function (code) { //on ctrl+c or exit
 		process.exit(); //exit completely
 	},1500);
 });
-
+/*
 process.on('uncaughtException', function (err) { //on error
 	console.importantLog("\nCRASH REPORT\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\nError:\n"+err+"\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\n");
 	console.importantLog("Exiting in 1500ms");
@@ -382,7 +382,7 @@ process.on('unhandledRejection', (reason, p) => {
     console.error("Unhandled Promise Rejection at: Promise ", p, " reason: ", reason);
     process.exit();
 });
-
+*/
 /***********************************
 --I12-- MUSIC INIT CODE --I12--
 ***********************************/

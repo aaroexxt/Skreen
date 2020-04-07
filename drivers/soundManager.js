@@ -28,7 +28,7 @@ const clamp = function(number, min, max) { //clamp values
 
 const {trackTimerModule, interactTimerModule, trackAudioController} = require("./trackTimers&Controllers.js");
 
-const airplay = require("./airplay.js"); //airplay server wrapper
+var airplay;
 const soundcloud = require("./soundcloud.js"); //soundcloud local storage wrapper
 
 /******
@@ -64,6 +64,7 @@ const SoundManagerV2 = {
     },
     pcm_MINVOLUME: 0, //pcm constants, shouldn't be changed for any reason
     pcm_MAXVOLUME: 1.5,
+    airplayEnabled: true,
 
     trackController: { //coordinates all the modules together
         play: function(trackObject, internalOrigin) { //if internalorigin flag is set, don't pause because the speaker already closed
@@ -136,6 +137,13 @@ const SoundManagerV2 = {
             if (!username) {
                 username = soundcloudSettings.defaultUsername;
             }
+            if (airplaySettings.enabled) {
+                airplay = require("./airplay.js"); //airplay server wrapper
+                _this.airplayEnabled = true;
+            } else {
+                _this.airplayEnabled = false;
+            }
+
 
             const errorReject = function(err) {
                 soundcloudSettings.soundcloudStatus = {ready: false, error: true, message: err};
@@ -163,44 +171,53 @@ const SoundManagerV2 = {
 
                 _this.currentPlayingTrack = soundcloud.localSoundcloudSettings.likedTracks[0]; //start with first track
                 _this.currentVolume = soundcloud.localSoundcloudSettings.defaultVolume;
+
+                var step6 = () => {
+                    //TRACKTIMER
+                    _this.trackTimer.init();
+
+                    //TRACKAUDIOCONTROLLER
+                    _this.trackAudioController.setVolume(soundcloudSettings.defaultVolume); //set volume to default
+                    let trackControllerEvents = _this.trackAudioController.eventEmitter;
+                    trackControllerEvents.on("trackEnd", () => {
+                        if (_this.debugMode) {
+                            console.log("trackControllerEvent: trackEnd, next track");
+                        }
+                        _this.playingTrack = false;
+                        _this.trackAudioController.playingTrackInternal = false; //make sure that state is properly configured
+
+                        _this.processClientEvent({ //process client event: track has ended, next track
+                            type: "trackForward",
+                            origin: "internal (trackFinished)"
+                        }); //request next track
+                    })
+
+                    //INTERACTTIMER
+                    _this.interactTimer.init(soundcloudSettings.minInteractionWaitTime/1000);
+
+
+                    soundcloudSettings.soundcloudStatus = {ready: true, error: false, message: ""};
+
+                    return resolve();
+                };
+
+                if (_this.airplayEnabled) { //If airplay's enabled, then do the init stuff
             //STEP 3
-                airplay.init(airplaySettings).then( () => {
+                    airplay.init(airplaySettings).then( () => {
             //STEP 4
-                    airplay.startServer().then( () => {
+                        airplay.startServer().then( () => {
             //STEP 5
-                        airplay.onClientConnected(_this.airplayClientConnected);
-                        airplay.onClientDisconnected(_this.airplayClientDisconnected);
+                            airplay.onClientConnected(_this.airplayClientConnected);
+                            airplay.onClientDisconnected(_this.airplayClientDisconnected);
 
-            //STEP 6
-                        //TRACKTIMER
-                        _this.trackTimer.init();
-
-                        //TRACKAUDIOCONTROLLER
-                        _this.trackAudioController.setVolume(soundcloudSettings.defaultVolume); //set volume to default
-                        let trackControllerEvents = _this.trackAudioController.eventEmitter;
-                        trackControllerEvents.on("trackEnd", () => {
-                            if (_this.debugMode) {
-                                console.log("trackControllerEvent: trackEnd, next track");
-                            }
-                            _this.playingTrack = false;
-                            _this.trackAudioController.playingTrackInternal = false; //make sure that state is properly configured
-
-                            _this.processClientEvent({ //process client event: track has ended, next track
-                                type: "trackForward",
-                                origin: "internal (trackFinished)"
-                            }); //request next track
-                        })
-
-                        //INTERACTTIMER
-                        _this.interactTimer.init(soundcloudSettings.minInteractionWaitTime/1000);
-
-
-                        soundcloudSettings.soundcloudStatus = {ready: true, error: false, message: ""};
-
-                        return resolve();
+                //STEP 6
+                            step6();
                         
-                    }).catch(errorReject); //one error rejecting function because good code cleanliness
-                }).catch(errorReject);
+                        }).catch(errorReject); //one error rejecting function because good code cleanliness
+                    }).catch(errorReject);
+                } else { //If not, just skip to step6
+                    step6();
+                }
             }).catch(errorReject);
 
         })
