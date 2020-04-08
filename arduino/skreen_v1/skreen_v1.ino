@@ -9,24 +9,52 @@
 #define REAL_NUM_LEDS 1100
 #define LEDS_PER_CONTROLLER 3
 #define NUM_LEDS REAL_NUM_LEDS/LEDS_PER_CONTROLLER        // How many leds in your strip?
-#define updateLEDS 2        // How many do you want to update every millisecond?
-#define COLOR_SHIFT 180000  // Time for colours to shift to a new spectrum (in ms)
+#define LED_TYPE    WS2811
+#define LED_COLOR_ORDER BRG //I'm using a BRG led strip which is kinda wacky
+
+#define updateLEDS 3        // How many do you want to update every millisecond?
 CRGB leds[NUM_LEDS];        // Define the array of leds
 
 // Define the digital I/O PINS..
-#define DATA_PIN 6          // led data transfer
-#define PITCH_PIN 0         // pitch input from frequency to voltage converter
-#define BRIGHT_PIN 4        // brightness input from amplified audio signal
-
+#define LED_DATA_PIN 3          // led data transfer
 #define maxCommandSize 30 //maximum command size from nodejs
+
+int currentAudioValue;
+
+const int frequencyBufferSize = 7; //Taken as soon as audio signal changes high -> low or reverse
+int freqBuffer[frequencyBufferSize];
+int freqProcBuffer[frequencyBufferSize];
+int fbIndex = 0;
+
+const int volumeBufferSize = 40; //Taken in 10ms increments
+int volBuffer[volumeBufferSize];
+int volProcBuffer[frequencyBufferSize]; //Dw about why its fBuf
+int vbIndex = 0;
+int vbPIndex = 0;
+
+long lastVolUpdateMillis = 0;
+long onTimeMicros;
+long lastOTM;
+long offTimeMicros;
+long lastoTM;
+boolean gotHigh = false;
+boolean gotLow = true;
+#define audioMiddle 127
+#define audioLevelDeltaTrigger 7
+#define volumeMax 225
+
+long curPeriod = 0;
+int curFreq = 0;
+
+int processedFreq = 0;
+int processedVolume = 0;
+
+int avgProcessedFreq = 0;
+int avgProcessedVolume = 0;
 
 /*
 * LED DEFS
 */
-// Don't touch these, internal color variation variables
-unsigned long setTime = COLOR_SHIFT;
-int shiftC = 0;
-int mulC = 2;
 
 // Define color structure for rgb
 struct color {
@@ -37,7 +65,7 @@ struct color {
 typedef struct color RGBColor;
 
 //Debug Mode
-boolean DEBUGMODE = true;
+boolean DEBUGMODE = false;
 
 /*
 SERVER CONN STUFF
@@ -52,13 +80,6 @@ boolean ledsOn = true;
 
 unsigned long lastSendTime = 0;
 const int sendConnectInterval = 1000;
-
-const int numReadings = 3;
-
-int readings[numReadings];      // the readings from the analog input
-int readIndex = 0;              // the index of the current reading
-int total = 0;                  // the running total
-int average = 0;                // the average
 
 void debugPrintln(char *s) {
   if (DEBUGMODE) {
@@ -88,10 +109,43 @@ void sendCommand(String command, String *value, uint8_t valueLen) {
 }
 
 void setup() { 
-    Serial.begin(9600);
-    FastLED.addLeds<NEOPIXEL, DATA_PIN>(leds, NUM_LEDS);
-    pinMode(A0, INPUT);
-    pinMode(A4, INPUT);
+    Serial.begin(115200);
+    FastLED.addLeds<LED_TYPE, LED_DATA_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
+    
+
+    //Initialize averaging buffer
+    for (int i=0; i<frequencyBufferSize; i++) {
+      //Frequency buffer initialization
+      freqBuffer[i] = 0;
+      freqProcBuffer[i] = 0;
+
+      //Volume buffer initialization
+      volProcBuffer[i] = 0;
+    }
+
+    for (int i=0; i<volumeBufferSize; i++) {
+      volBuffer[i] = 0;
+    }
+
+
+    cli();//disable interrupts
+    
+    //set up continuous sampling of analog pin 0
+    
+    //clear ADCSRA and ADCSRB registers
+    ADCSRA = 0;
+    ADCSRB = 0;
+    
+    ADMUX |= (1 << REFS0); //set reference voltage
+    ADMUX |= (1 << ADLAR); //left align the ADC value- so we can read highest 8 bits from ADCH register only
+    
+    ADCSRA |= (1 << ADPS2) | (1 << ADPS0); //set ADC clock with 32 prescaler- 16mHz/32=500kHz
+    ADCSRA |= (1 << ADATE); //enabble auto trigger
+    ADCSRA |= (1 << ADIE); //enable interrupts when measurement complete
+    ADCSRA |= (1 << ADEN); //enable ADC
+    ADCSRA |= (1 << ADSC); //start ADC measurements
+    
+    sei();//enable interrupts
 
     //Make all LEDS dark to start
     clearLEDS();
@@ -101,12 +155,70 @@ void setup() {
       leds[i] = CRGB::Red;
       leds[i-1] = CRGB::Black;
       FastLED.show();
-      delay(25);
+      delay(1);
     }
+}
 
-    for (int thisReading = 0; thisReading < numReadings; thisReading++) {
-      readings[thisReading] = 0;
+ISR(ADC_vect) {//when new ADC value ready
+  currentAudioValue = ADCH; //update the variable currentAudioValue with new value from A0 (between 0 and 255)
+  long curMicros = micros();
+
+  if (gotLow) {
+    if (currentAudioValue > audioMiddle+audioLevelDeltaTrigger) {
+      
+      onTimeMicros = lastOTM-curMicros;
+      lastOTM = curMicros;
+
+      gotHigh = true;
+      gotLow = false;
     }
+  } else if (gotHigh) {
+    if (currentAudioValue < audioMiddle-audioLevelDeltaTrigger) {
+      offTimeMicros = lastoTM-curMicros;
+      lastoTM = curMicros;
+
+      curPeriod = onTimeMicros+offTimeMicros;
+      curFreq = (int)(-2.0*1000000.0/curPeriod);
+
+      if (curFreq < 0) {
+        curFreq = 0;
+      }
+
+      //Write to next element of buffer to avoid O(n-1) shift code, just O(1)
+      freqBuffer[fbIndex] = curFreq;
+
+      //Freq is max value in buffer (from empirical testing LETS TRY IT LOL)
+      processedFreq = freqBuffer[0];
+      for (int i=1; i<frequencyBufferSize; i++) {
+        if (freqBuffer[i] > processedFreq) {
+          processedFreq = freqBuffer[i];
+        }
+      }
+
+      freqProcBuffer[fbIndex] = processedFreq;
+      fbIndex++;
+      if (fbIndex > frequencyBufferSize-1) {
+        fbIndex = 0;
+      }
+
+      //Averaged freq is the new average of the freqProcBuffer
+      avgProcessedFreq = freqProcBuffer[0];
+      for (int i=1; i<frequencyBufferSize; i++) {
+        avgProcessedFreq += freqProcBuffer[i];
+      }
+      avgProcessedFreq /= frequencyBufferSize; //will auto do floor
+
+      gotLow = true;
+      gotHigh = false;
+    }
+  }
+
+  //Basic range checks
+  if (curMicros-lastOTM > 33333.0) { //If last peak audio signal is less than 30Hz (about limit of hardware) or greater than 2500Hz (top limit of hardware)
+    curFreq = 0; //Default freq to 0
+    processedFreq = 0;
+    avgProcessedFreq = 0;
+  }
 }
 
 void loop() { 
@@ -131,55 +243,61 @@ void loop() {
   }*/
 
   unsigned long time = millis();
+  if (time - lastVolUpdateMillis > 10) { //Every 10ms sample audio, this gives 100Hz check rate
+    lastVolUpdateMillis = time;
 
-  if (ledsOn) {
-    // Shift the color spectrum by 200 on set intervals (setTime)
-    if(time / (double)setTime >= 1) {
-      setTime = time + COLOR_SHIFT;
-      Serial.println(setTime);
-      shiftC += 200;
-      mulC++;
-      if(shiftC >= 600) {
-        shiftC = 0;
-      }
-      if(mulC > 3) {
-        mulC = 2;
-      }
+    volBuffer[vbIndex] = currentAudioValue;
+    vbIndex++;
+    if (vbIndex > volumeBufferSize-1) {
+      vbIndex = 0;
     }
 
+
+    //Volume is max value in buffer (from empirical testing LETS TRY IT LOL)
+    processedVolume = volBuffer[0];
+    for (int i=1; i<volumeBufferSize; i++) {
+      if (volBuffer[i] > processedVolume) {
+        processedVolume = volBuffer[i];
+      }
+    }
+    processedVolume = map(processedVolume, audioMiddle, volumeMax, 0, 100);
+
+    volProcBuffer[vbPIndex] = processedVolume;
+    vbPIndex++;
+    if (vbPIndex > frequencyBufferSize-1) {
+      vbPIndex = 0;
+    }
+
+    avgProcessedVolume = volProcBuffer[0];
+    for (int i=1; i<frequencyBufferSize; i++) {
+      avgProcessedVolume+=volProcBuffer[i];
+    }
+    avgProcessedVolume /= frequencyBufferSize;
+
+  }
+
+  avgProcessedVolume = (avgProcessedVolume < 0) ? -avgProcessedVolume : avgProcessedVolume;
+  if (avgProcessedFreq <= 0) {
+    avgProcessedFreq = 0;
+  }
+
+  /*
+  Serial.print("Hz:");
+  Serial.print(avgProcessedFreq);
+  Serial.print(", Vol: ");
+  Serial.println(avgProcessedVolume);
+  */
+
+  if (ledsOn) {
     // Shift all LEDs to the right by updateLEDS number each time
     for(int i = NUM_LEDS - 1; i >= updateLEDS; i--) {
       leds[i] = leds[i - updateLEDS];
     }
 
-    // Get the pitch and brightness to compute the new color
-    int newPitch = (analogRead(PITCH_PIN)*2) + shiftC;
-    //Serial.print("BRIGHT: ");
-
-
-
-      // subtract the last reading:
-    total = total - readings[readIndex];
-    // read from the sensor:
-    readings[readIndex] = analogRead(PITCH_PIN);
-    // add the reading to the total:
-    total = total + readings[readIndex];
-    // advance to the next position in the array:
-    readIndex = readIndex + 1;
-
-    // if we're at the end of the array...
-    if (readIndex >= numReadings) {
-      // ...wrap around to the beginning:
-      readIndex = 0;
+    RGBColor nc = pitchConv(avgProcessedFreq, avgProcessedVolume);
+    if (DEBUGMODE) {
+      printRGBColor(nc);
     }
-
-    // calculate the average:
-    average = total / numReadings;
-    Serial.println(average);
-    Serial.print(" ");
-    //Serial.print(" PITCH: ");
-    //Serial.println(analogRead(PITCH_PIN));
-    RGBColor nc = pitchConv(newPitch, analogRead(BRIGHT_PIN));
 
     // Set the left most updateLEDs with the new color
     for(int i = 0; i < updateLEDS; i++) {
@@ -240,13 +358,13 @@ void clearLEDS() {
 
 /**
  * Converts the analog brightness reading into a percentage
- * 100% brightness is 614.. about 3 volts based on frequency to voltage converter circuit
+ * 100% brightness is 100.. about 3 volts based on frequency to voltage converter circuit
  * The resulting percentage can simply be multiplied on the rgb values when setting our colors,
  * for example black is (0,0,0) so when volume is off we get 0v and all colors are black (leds are off)
  */
 double convBrightness(int b) {
-  double c = b / 614.0000;
-  if( c < 0.2 ) {
+  double c = b / 100.0000;
+  if( c < 0.1 ) {
     c = 0;
   }
   else if(c > 1) {
@@ -265,40 +383,69 @@ RGBColor pitchConv(int p, int b) {
   RGBColor c;
   double bright = convBrightness(b);
 
-  if(p < 40) {
-    setRGBColor(&c, 255, 0, 0);
+  if (p < 0) {
+    p = 0;
   }
-  else if(p >= 40 && p <= 77) {
-    int b = (p - 40) * (255/37.0000);
-    setRGBColor(&c, 255, 0, b);
+
+  /*Serial.print(p);
+  Serial.print(",");
+  Serial.println(b);*/
+
+  //Assuming ~3000hz max
+
+  int pScaled = map(p, 0, getRangeMax(p), 0, 255);
+  pScaled = constrain(pScaled, 0, 255);
+
+  if (DEBUGMODE) {
+    Serial.print("B:");
+    Serial.print(bright);
+    Serial.print(",R=");
+    Serial.print(getRGBRange(p));
+    Serial.print(", ");
+    Serial.print(p);
+    Serial.print(":");
+    Serial.print(pScaled);
+    Serial.print(";RMax=");
+    Serial.println(getRangeMax(p));
   }
-  else if(p > 77 && p <= 205) {
-    int r = 255 - ((p - 78) * 2);
-    setRGBColor(&c, r, 0, 255);
-  }
-  else if(p >= 206 && p <= 238) {
-    int g = (p - 206) * (255/32.0000);
-    setRGBColor(&c, 0, g, 255);
-  }
-  else if(p <= 239 && p <= 250) {
-    int r = (p - 239) * (255/11.0000);
-    setRGBColor(&c, r, 255, 255);
-  }
-  else if(p >= 251 && p <= 270) {
-    setRGBColor(&c, 255, 255, 255);
-  }
-  else if(p >= 271 && p <= 398) {
-    int rb = 255-((p-271)*2);
-    setRGBColor(&c, rb, 255, rb);
-  }
-  else if(p >= 398 && p <= 653) {
-    setRGBColor(&c, 0, 255-(p-398), (p-398));
-  }
-  else {
-    setRGBColor(&c, 255, 0, 0);
+
+  switch (getRGBRange(p)) {
+    case 0: //red
+      setRGBColor(&c, pScaled, 0, 0);
+      break;
+    case 1: //orange
+      setRGBColor(&c, pScaled, pScaled*0.66, 0);
+      break;
+    case 2: //yellow
+      setRGBColor(&c, pScaled, pScaled, 0);
+      break;
+    case 3: //green
+      setRGBColor(&c, 0, pScaled, 0);
+      break;
+    case 4: //blue
+      setRGBColor(&c, 0, 0, pScaled);
+      break;
+    case 5: //indigo
+      setRGBColor(&c, pScaled*0.33, 0, pScaled*0.5);
+      break;
+    case 6: //violet
+      setRGBColor(&c, pScaled*0.5, 0, pScaled);
+      break;
+    case 7:
+      setRGBColor(&c, pScaled, pScaled, pScaled);
+      break;
+
   }
   setRGBColor(&c, c.r * bright, c.g * bright, c.b * bright);
   return c;
+}
+
+int getRGBRange(int p) { //Pitch in Hz (from Freq conv)
+  return floor(p/300);
+}
+
+int getRangeMax(int p) { //Pitch in Hz (from Freq conv)
+  return (getRGBRange(p)+1)*300;
 }
 
 void setRGBColor(RGBColor *c, int r, int g, int b) {
