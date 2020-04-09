@@ -74,12 +74,7 @@ SERVER CONN STUFF
 const char* commandSplitChar=";";
 const char* commandValueChar="|";
 
-boolean connected = false;
-boolean running = true;
-boolean ledsOn = true;
-
-unsigned long lastSendTime = 0;
-const int sendConnectInterval = 1000;
+boolean ledsOn = false;
 
 void debugPrintln(char *s) {
   if (DEBUGMODE) {
@@ -222,25 +217,11 @@ ISR(ADC_vect) {//when new ADC value ready
 }
 
 void loop() { 
-  /*if (running) {
+  if (Serial.available() > 0) {
     String input = Serial.readString();
     input.trim();
-    if (connected == false) { //Are we connected to the server?
-      input.toLowerCase(); //Modify input to be case-insentitive
-      if (millis()-lastSendTime >= sendConnectInterval) { //output every second
-        Serial.print(F("AOK")); //Respond to server's request for our input
-        Serial.print(commandSplitChar);
-        lastSendTime+=sendConnectInterval;
-      }
-      if (input.indexOf("sok")>-1) {
-        Serial.print(F("CONN"));
-        Serial.print(commandSplitChar);
-        connected = true;
-      }
-    } else {
-      processCommand(input); //This will recurse
-    }
-  }*/
+    processCommand(input); //This will recurse
+  }
 
   unsigned long time = millis();
   if (time - lastVolUpdateMillis > 10) { //Every 10ms sample audio, this gives 100Hz check rate
@@ -327,15 +308,19 @@ void processCommand(String input) {
 
     command.toLowerCase(); //conv command to lowercase
 
-    if (command == F("debugon")) {
+    if (command.equals("debugon")) {
       DEBUGMODE = true;
-    } else if (command == F("debugoff")) {
+      Serial.print("DEBUG|true;");
+    } else if (command.equals("debugoff")) {
       DEBUGMODE = false;
-    } else if (command == F("leds_on")) {
+      Serial.print("DEBUG|false;");
+    } else if (command.equals("leds_on")) {
       ledsOn = true;
-    } else if (command == F("leds_off")) {
+      Serial.print("LEDS|true;");
+    } else if (command.equals("leds_off")) {
       ledsOn = false;
-        clearLEDS();
+      Serial.print("LEDS|false;");
+      clearLEDS();
     } else {
       Serial.print(F("UNC|"));
       Serial.print(command);
@@ -364,7 +349,7 @@ void clearLEDS() {
  */
 double convBrightness(int b) {
   double c = b / 100.0000;
-  if( c < 0.1 ) {
+  if( c < 0.2 ) {
     c = 0;
   }
   else if(c > 1) {
