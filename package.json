@@ -24,5 +24,20 @@
   "bugs": {
     "url": "https://github.com/aaroexxt/Skreen/issues"
   },
-  "homepage": "https://github.com/aaroexxt/Skreen#readme"
+  "homepage": "https://github.com/aaroexxt/Skreen#readme",
+  "dependencies": {
+    "brain.js": "^2.0.0-alpha.12",
+    "colors": "^1.4.0",
+    "nodemon": "^2.0.3",
+    "nodetunes": "git://github.com/Kolky/nodetunes.git#master",
+    "serialport": "^8.0.7",
+    "single-line-log": "^1.1.2",
+    "speaker": "^0.5.1",
+    "strip-color": "^0.1.0",
+    "window-size": "^1.1.1"
+  },
+  "devDependencies": {
+    "chai": "^4.2.0",
+    "mocha": "^7.1.1"
+  }
 }

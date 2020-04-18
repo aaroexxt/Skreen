@@ -12,7 +12,7 @@
 #define LED_TYPE    WS2811
 #define LED_COLOR_ORDER BRG //I'm using a BRG led strip which is kinda wacky
 
-#define updateLEDS 3        // How many do you want to update every millisecond?
+int updateLEDS = 3;        // How many do you want to update every millisecond?
 CRGB leds[NUM_LEDS];        // Define the array of leds
 
 // Define the digital I/O PINS..
@@ -71,10 +71,17 @@ boolean DEBUGMODE = false;
 SERVER CONN STUFF
 */
 
-const char* commandSplitChar=";";
-const char* commandValueChar="|";
+const char commandSplitChar=';';
+const char commandValueChar='|';
 
+//Store recieved commands from user
+String serInput = "";
+
+
+//State variables
 boolean ledsOn = false;
+int ledMode = 1;
+float brightnessMin = 0.2;
 
 void debugPrintln(char *s) {
   if (DEBUGMODE) {
@@ -104,7 +111,7 @@ void sendCommand(String command, String *value, uint8_t valueLen) {
 }
 
 void setup() { 
-    Serial.begin(115200);
+    Serial.begin(9600);
     FastLED.addLeds<LED_TYPE, LED_DATA_PIN, LED_COLOR_ORDER>(leds, NUM_LEDS).setCorrection(TypicalLEDStrip);
     
 
@@ -150,7 +157,6 @@ void setup() {
       leds[i] = CRGB::Red;
       leds[i-1] = CRGB::Black;
       FastLED.show();
-      delay(1);
     }
 }
 
@@ -216,11 +222,20 @@ ISR(ADC_vect) {//when new ADC value ready
   }
 }
 
-void loop() { 
+void loop() {
   if (Serial.available() > 0) {
-    String input = Serial.readString();
-    input.trim();
-    processCommand(input); //This will recurse
+    char inChar = Serial.read();
+    serInput += inChar;
+    //Serial.println(serInput);
+    if (inChar == commandSplitChar) {
+      serInput.trim();
+      if (DEBUGMODE || true) {
+        Serial.print("COMM RECV: ");
+        Serial.println(serInput);
+      }
+      processCommand(serInput); //This will recurse
+      serInput = "";
+    }
   }
 
   unsigned long time = millis();
@@ -270,24 +285,36 @@ void loop() {
   */
 
   if (ledsOn) {
-    // Shift all LEDs to the right by updateLEDS number each time
-    for(int i = NUM_LEDS - 1; i >= updateLEDS; i--) {
-      leds[i] = leds[i - updateLEDS];
-    }
-
     RGBColor nc = pitchConv(avgProcessedFreq, avgProcessedVolume);
+    CRGB ncRGB = CRGB(nc.r, nc.g, nc.b);
+    
     if (DEBUGMODE) {
       printRGBColor(nc);
     }
 
-    // Set the left most updateLEDs with the new color
-    for(int i = 0; i < updateLEDS; i++) {
-      leds[i] = CRGB(nc.r, nc.g, nc.b);
+    switch (ledMode) {
+      case 1:
+        // Shift all LEDs to the right by updateLEDS number each time
+        for(int i = NUM_LEDS - 1; i >= updateLEDS; i--) {
+          leds[i] = leds[i - updateLEDS];
+        }
+
+        // Set the left most updateLEDs with the new color
+        for(int i = 0; i < updateLEDS; i++) {
+          leds[i] = ncRGB;
+        }
+        break;
+      case 2: //just set all LEDS to the same color
+        for (int i=0; i<NUM_LEDS; i++) {
+          leds[i] = ncRGB;
+        }
+        break;
     }
+
+    
     FastLED.show();
+    delay(1);
   }
-  
-  delay(1);
 }
 
 void processCommand(String input) {
@@ -308,19 +335,53 @@ void processCommand(String input) {
 
     command.toLowerCase(); //conv command to lowercase
 
-    if (command.equals("debugon")) {
+    if (command.equals("di")) {
       DEBUGMODE = true;
       Serial.print("DEBUG|true;");
-    } else if (command.equals("debugoff")) {
+    } else if (command.equals("do")) {
       DEBUGMODE = false;
       Serial.print("DEBUG|false;");
-    } else if (command.equals("leds_on")) {
+    } else if (command.equals("li")) {
       ledsOn = true;
       Serial.print("LEDS|true;");
-    } else if (command.equals("leds_off")) {
+    } else if (command.equals("lo")) {
       ledsOn = false;
       Serial.print("LEDS|false;");
       clearLEDS();
+    } else if (command.equals("ex")) {
+      Serial.print("EXIST|true;");
+    } else if (command.equals("s-vm")) {
+      Serial.print("SVM|");
+      float valueConv = value.toFloat();
+      if (valueConv > 0.0 && valueConv < 100.0) {
+        brightnessMin = valueConv/100.0000;
+      } else {
+        Serial.print(value);
+      }
+      Serial.print(";");
+    } else if (command.equals("lm")) {
+      Serial.print("LM|");
+      int v = value.toInt();
+      if (v > 0 && v <= 2) {
+        ledMode = v;
+        Serial.print(value);
+      } else {
+        Serial.print("E");
+      }
+      Serial.print(";");
+    } else if (command.equals("ul")) {
+      Serial.print("UL|");
+      updateLEDS = value.toInt();
+      Serial.print(updateLEDS);
+      Serial.print(";");
+    } else if (command.equals("cv")) {
+      Serial.print("CURRENT_VOLUME|");
+      Serial.print(avgProcessedVolume);
+      Serial.print(";");
+    } else if (command.equals("cf")) {
+      Serial.print("CURRENT_FREQUENCY|");
+      Serial.print(avgProcessedFreq);
+      Serial.print(";");
     } else {
       Serial.print(F("UNC|"));
       Serial.print(command);
@@ -349,7 +410,7 @@ void clearLEDS() {
  */
 double convBrightness(int b) {
   double c = b / 100.0000;
-  if( c < 0.2 ) {
+  if( c < brightnessMin ) {
     c = 0;
   }
   else if(c > 1) {
