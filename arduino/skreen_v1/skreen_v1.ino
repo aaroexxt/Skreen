@@ -12,7 +12,7 @@
 #define LED_TYPE    WS2811
 #define LED_COLOR_ORDER BRG //I'm using a BRG led strip which is kinda wacky
 
-int updateLEDS = 3;        // How many do you want to update every millisecond?
+int updateLEDS = 4;        // How many do you want to update every millisecond?
 CRGB leds[NUM_LEDS];        // Define the array of leds
 
 // Define the digital I/O PINS..
@@ -81,7 +81,7 @@ String serInput = "";
 //State variables
 boolean ledsOn = false;
 int ledMode = 1;
-float brightnessMin = 0.2;
+float brightnessMin = 0.17;
 
 void debugPrintln(char *s) {
   if (DEBUGMODE) {
@@ -229,7 +229,7 @@ void loop() {
     //Serial.println(serInput);
     if (inChar == commandSplitChar) {
       serInput.trim();
-      if (DEBUGMODE || true) {
+      if (DEBUGMODE) {
         Serial.print("COMM RECV: ");
         Serial.println(serInput);
       }
@@ -364,6 +364,7 @@ void processCommand(String input) {
       int v = value.toInt();
       if (v > 0 && v <= 2) {
         ledMode = v;
+        clearLEDS();
         Serial.print(value);
       } else {
         Serial.print("E");
