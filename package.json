@@ -28,8 +28,10 @@
   "dependencies": {
     "brain.js": "^2.0.0-alpha.12",
     "colors": "^1.4.0",
+    "mp3-duration": "^1.1.0",
     "nodemon": "^2.0.3",
     "nodetunes": "git://github.com/Kolky/nodetunes.git#master",
+    "pcm-volume": "^1.0.0",
     "serialport": "^8.0.7",
     "single-line-log": "^1.1.2",
     "speaker": "^0.5.1",

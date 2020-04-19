@@ -153,11 +153,11 @@ void setup() {
     clearLEDS();
 
     //Run init pattern to show LEDS working
-    for (int i=1; i<NUM_LEDS; i++) {
+    /*for (int i=1; i<NUM_LEDS; i++) {
       leds[i] = CRGB::Red;
       leds[i-1] = CRGB::Black;
       FastLED.show();
-    }
+    }*/
 }
 
 ISR(ADC_vect) {//when new ADC value ready
