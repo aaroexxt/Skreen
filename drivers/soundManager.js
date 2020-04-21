@@ -390,7 +390,7 @@ const SoundManagerV2 = {
                                     var ind = Math.round(Math.random()*tracksLength);
                                     if (ind == _this.currentPlayingTrack.index) { //is track so add one
                                         ind++;
-                                        if (ind > tracksLength) { //lol very random chance that it wrapped over
+                                        if (ind >= tracksLength) { //lol very random chance that it wrapped over
                                             ind = 0;
                                         }
                                     }

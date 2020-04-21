@@ -9,7 +9,6 @@
 
 //Dependencies
 const fetch = require('node-fetch');
-const progress = require('progress-stream');
 const remoteFileSize = require("remote-file-size");
 const utils = require("./utils.js");
 const path = require('path');
@@ -673,20 +672,9 @@ var SCUtils = {
                                         console.log("writing to path: "+unfinTrackPath);
                                     }
                                     const dest = fs.createWriteStream(unfinTrackPath); //write to unfinished track path first
-                                    var pTitle = (trackObject.title.length > 15) ? trackObject.title.substring(0,15) : trackObject.title;
-                                    var pBar = new utils.progressBar({
-                                        startPercent: 0,
-                                        task: "Downloading '"+pTitle+"'",
-                                        showETA: true
-                                    });
-                                    var str = progress({
-                                        time: 500,
-                                        length: size
-                                    }, progress => {
-                                        //console.log("Percentage: "+progress.percentage+", ETA: "+progress.eta+" (for trackID "+trackID+")");
-                                        pBar.update(progress.percentage/100,utils.formatHHMMSS(progress.eta));
-                                    });
-                                    response.body.pipe(str).pipe(dest);
+                                    var pTitle = (trackObject.title.length > 30) ? trackObject.title.substring(0,30) : trackObject.title;
+                                    console.log("[SC] Downloading track '"+pTitle+"'...");
+                                    response.body.pipe(dest);
                                     response.body.on('error', err => {
                                         return sreject(err);
                                     });

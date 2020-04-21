@@ -12,7 +12,7 @@
 			<h1 class="logintext">Login To Skreen</h1>
 			<h3 id="attemptNumber">Login attempt: 150 attempts max</h3>
 			<center>
-				<div id="login-passcode" style="display:none">
+				<div id="login-passcode" style="display: none;">
 					<span id="login-passcodeField" style="font-size: large; text-decoration: underline"></span>
 					<div>
 						<button class="passcode" onclick="login.passcodeHandles.tracker+='1'; login.passcodeHandles.update();">1</button>
@@ -70,7 +70,7 @@
 						login.passcodeHandles.update();
 					},
 					enterPasscode: function(passcode) {
-						fetch('http://localhost/login/passcode', {
+						fetch('http://'+window.location.host+'/login/passcode', {
 						  method: 'POST',
 						  headers: new Headers({'content-type': 'application/json'}),
 						  body: JSON.stringify({passcode: passcode})
@@ -95,15 +95,13 @@
 						login.transition.state = "passcode";
 						document.getElementById(config.emailEID).style.display = "none";
 						document.getElementById(config.passcodeEID).style.display = "block";
-						document.getElementById(config.videoEID).style.display = "none";
 					},
 					email: function() {
 						login.transition.state = "email";
 						document.getElementById(config.emailEID).style.display = "block";
 						document.getElementById(config.passcodeEID).style.display = "none";
-						document.getElementById(config.videoEID).style.display = "none";
 					},
-					state: "video",
+					state: "passcode",
 					next: function() {
 						let lt = login.transition;
 						if (lt.state == "email") {
@@ -119,7 +117,7 @@
 				}
 			}
 			login.passcodeHandles.init();
-			login.transition.video();
+			login.transition.passcode();
 		</script>
 	</body>
 </html>

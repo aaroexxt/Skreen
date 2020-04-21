@@ -1,6 +1,6 @@
 {
     "PRODUCTION": false,
-    "loginMessage": ["Welcome to\n"," ██████╗ █████╗ ██████╗      ██████╗ ███████╗    ██╗   ██╗  ██╗", "██╔════╝██╔══██╗██╔══██╗    ██╔═══██╗██╔════╝    ██║   ██║ ███║", "██║     ███████║██████╔╝    ██║   ██║███████╗    ██║   ██║ ╚██║", "██║     ██╔══██║██╔══██╗    ██║   ██║╚════██║    ╚██╗ ██╔╝  ██║", "╚██████╗██║  ██║██║  ██║    ╚██████╔╝███████║     ╚████╔╝██╗██║", " ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝     ╚═════╝ ╚══════╝      ╚═══╝ ╚═╝╚═╝","\nBy Aaron Becker\n"],
+    "loginMessage": ["Welcome to\n","███████╗██╗  ██╗██████╗ ███████╗███████╗███╗   ██╗    ██╗   ██╗ ██████╗    ██╗","██╔════╝██║ ██╔╝██╔══██╗██╔════╝██╔════╝████╗  ██║    ██║   ██║██╔═████╗  ███║","███████╗█████╔╝ ██████╔╝█████╗  █████╗  ██╔██╗ ██║    ██║   ██║██║██╔██║  ╚██║","╚════██║██╔═██╗ ██╔══██╗██╔══╝  ██╔══╝  ██║╚██╗██║    ╚██╗ ██╔╝████╔╝██║   ██║","███████║██║  ██╗██║  ██║███████╗███████╗██║ ╚████║     ╚████╔╝ ╚██████╔╝██╗██║","╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝      ╚═══╝   ╚═════╝ ╚═╝╚═╝","\nBy Aaron Becker\n"],
 
     "information": {
         "frontendVersion": 1,
@@ -26,10 +26,10 @@
         "logValidationInterval": 60000,
         "loggerBaseFunctions": ["log", "warn", "error", "iinfo", "ilog"],
 
-        "arduinoBaudRate": 115200,
-        "arduinoSensorUpdateInterval": 1000,
-        "arduinoSensorOverloadedInterval": 2000,
-        "arduinoSensorOverloadedTimeout": 10000,
+        "arduinoBaudRate": 9600,
+        "portCheckDataTimeout": 4000,
+        "arduinoOKCommand": "ex",
+        "arduinoCheckPresentInterval": 10000,
 
         "jsonDBPath": "data/userDB.json",
 
@@ -87,11 +87,11 @@
             "commandGroupPath": "../data/neural/match/commandGroup.js",
             "commandsPath": "commands.json",
             "responsesPath": "responses.json",
-            "targetError": 0.01
+            "targetError": 0.08
         }
     },
     "airplaySettings": {
-        "serverName": "CarLOS",
-        "enabled": false
+        "serverName": "SkreenBETA",
+        "enabled": true
     }
 }

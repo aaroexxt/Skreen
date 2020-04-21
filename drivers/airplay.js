@@ -33,6 +33,7 @@ const airplayUtils = {
 		return new Promise( (resolve, reject) => {
 			_this.server = new airTunes({serverName: _this.serverName});
 			_this.server.on('clientConnected', stream => {
+				console.log("[AIRPLAY] client connected to airplay");
 				for (var i=0; i<_this.clientConnectedListeners.length; i++) {
 					try {
 						_this.clientConnectedListeners[i](stream);
@@ -42,6 +43,7 @@ const airplayUtils = {
 				}
 			});
 			_this.server.on('clientDisconnected', stream => {
+				console.log("[AIRPLAY] client disconnected from airplay");
 				for (var i=0; i<_this.clientDisconnectedListeners.length; i++) {
 					try {
 						_this.clientDisconnectedListeners[i](stream);

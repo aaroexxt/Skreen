@@ -67,6 +67,7 @@ Runtime Code (1 step):
 --I1-- MODULE INITIALIZATION --I1--
 **********************************/
 const fs = require('fs');
+const os = require('os');
 const utils = require('./drivers/utils.js'); //include the utils file
 const path = require('path');
 const singleLineLog = require('single-line-log').stdout; //single line logging
@@ -108,13 +109,7 @@ PRODUCTIONMODE = settingsData.PRODUCTION; //production mode?
 runtimeSettings.loginMessage = settingsData.loginMessage;
 
 //console.clear();
-console.log("~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\nSkreen V1\nBy Aaron Becker\nPORT: "+runtimeSettings.serverPort+"\nCWD: "+cwd+"\nPID: "+process.pid+"\n~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\n");
-
-/*******************************
---I3-- STATE MACHINE INIT --I3--
-*******************************/
-//UNNEEDED COMPLEXITY, so I didn't implement it
-//const stateMachine = require('./drivers/stateMachine.js');
+console.log("~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\nSkreen V0.1\nBy AAron Becker\nPORT: "+runtimeSettings.serverPort+"\nCWD: "+cwd+"\nPID: "+process.pid+"\n~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\n");
 
 /***************************
 --I4-- CONSOLE COLORS --I4--
@@ -293,16 +288,17 @@ loggingUtils.init(cwd, runtimeSettings).then( () => {
 --I7-- ARDUINO COMMAND HANDLING --I7--
 *************************************/
 
-var arduinoUtils = require('./drivers/arduino.js'); //require the driver
-//console.log("Serial device from start script: "+serialDevice);
+var arduinoUtils = require('./drivers/arduino.js'); //require the driver;
+runtimeInformation.arduinoConnected = false;
 arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
 	console.importantLog("Arduino driver initialized successfully (1/4)");
 	arduinoUtils.findArduino().then(arduinoAddr => {
-		console.importantLog("Arduino located on serial port successfully (2/4)");
-		arduinoUtils.connectArduino(serialDevice, runtimeSettings, runtimeInformation).then( () => {
+		console.importantLog("Arduino located on serial port '"+arduinoAddr+"' successfully (2/4)");
+		arduinoUtils.connectArduino(arduinoAddr).then( () => {
 			console.importantLog("Arduino connected successfully (3/4)");
-			arduinoUtils.enableSensorUpdates(runtimeSettings, runtimeInformation).then( () => {
-				console.importantLog("Arduino sensor updates enabled (4/4)");
+			runtimeInformation.arduinoConnected = true;
+			arduinoUtils.setupExistenceCheck(runtimeInformation).then(() => {
+				console.importantLog("Arduino existence check enabled (4/4)");
 				console.importantInfo("ARDU INIT OK");
 			}).catch( err => {
 				console.error("Ardu init error (enabling sensorupdates): "+err);
@@ -364,10 +360,10 @@ process.on('SIGINT', function (code) { //on ctrl+c or exit
 	console.importantLog("\nSIGINT signal recieved, graceful exit (garbage collection) w/code "+code);
 	runtimeInformation.status = "Exiting";
 	arduinoUtils.sendCommand("status","Exiting");
-	console.importantLog("Exiting in 1500ms");
+	console.importantLog("Exiting in 500ms");
 	setTimeout(function(){
 		process.exit(); //exit completely
-	},1500);
+	},500);
 });
 /*
 process.on('uncaughtException', function (err) { //on error
@@ -396,23 +392,6 @@ soundManager.init(soundcloudSettings, airplaySettings, cwd).then( () => {
 	console.error("Error initializing SC: "+err);
 });
 
-/*******************************
---I14-- Mapping Init Code --I14--
-*******************************/
-
-var mapReady = false;
-
-console.log("Initializing Mapping");
-const mapUtils = require('./drivers/mapping.js');
-mapUtils.init(cwd, runtimeSettings).then( () => {
-	console.importantInfo("MAP INIT OK");
-	mapReady = true; //set ready flag
-}).catch( err => {
-	console.error("Error initializing map: "+err);
-	mapReady = false;
-}); //initialize (async)
-
-
 
 /******************************
 --I16-- MISC. INIT CODE --I16--
@@ -440,7 +419,6 @@ DEPS
 
 //express deps
 const express = require("express");
-const errorHandler = require('errorhandler');
 //init the routers
 var APIrouter = express.Router();
 var SCrouter = express.Router();
@@ -465,7 +443,7 @@ const LocalStrategy = require('passport-local').Strategy;
 const CustomStrategy = require('passport-custom').Strategy;
 
 const bcrypt = require('bcrypt');
-const jsonDB = require('node-json-db');
+const jsonDB = require('node-json-db').JsonDB;
 
 const db = new jsonDB(runtimeSettings.jsonDBPath, true, false); //connect to json-database
 
@@ -500,7 +478,6 @@ INIT MODS
 
 console.log("[AUTH] Init modules begun");
 
-app.use(errorHandler({ dumpExceptions: true, showStack: true })); 
 app.use(serveFavicon(path.join(cwd,runtimeSettings.faviconDirectory))); //serve favicon
 app.use(cors()); //enable cors
 
@@ -980,7 +957,28 @@ APIrouter.use('/SC', SCrouter); //connect soundcloud router to api
 
 console.log("[AUTH] Init server begun");
 server.listen(runtimeSettings.serverPort, () => {
-	console.log('Node server started on port ' + runtimeSettings.serverPort);
+	console.log('Node server started OK on port ' + runtimeSettings.serverPort);
+	let ifaces = os.networkInterfaces();
+
+	Object.keys(ifaces).forEach(function (ifname) {
+	  var alias = 0;
+
+	  ifaces[ifname].forEach(function (iface) {
+	    if ('IPv4' !== iface.family || iface.internal !== false) {
+	      // skip over internal (i.e. 127.0.0.1) and non-ipv4 addresses
+	      return;
+	    }
+
+	    if (alias >= 1) {
+	      // this single interface has multiple ipv4 addresses
+	      console.log(ifname + ':' + alias, iface.address);
+	    } else {
+	      // this interface has only one ipv4 adress
+	      console.importantInfo("Connected via interface name: '"+ifname+"', IP address: "+iface.address);
+	    }
+	    ++alias;
+	  });
+	});
 });
 
 //I see you all the way at the bottom... what r u doing here, go back up and code something useful!
