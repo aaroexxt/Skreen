@@ -8,12 +8,13 @@
 */
 
 const serialPort = require('serialport'); //require serialport driver
-const deviceCommandQueue = require('deviceCommandQueue');
+const deviceCommandQueue = require('./deviceCommandQueue.js');
 
 var arduinoUtilities = {
     debugMode: true,
     arduinoCommandSplitChar: ";",
     arduinoCommandValueChar: "|",
+    commandQueue: undefined,
 
     arduinoCommandBuffer: "",  //need buffer because might not recieve whole command in one recieve
 
@@ -24,7 +25,7 @@ var arduinoUtilities = {
     existenceCheckPresent: false,
     arduinoExists: false,
 
-    init: function(eRuntimeSettings, eRuntimeInformation, arduinoAddr) {
+    init: function(eRuntimeSettings, eRuntimeInformation) {
         return new Promise((resolve, reject) => {
             if (typeof eRuntimeSettings == "undefined") {
                 return reject("[ARDUINO] runtimeSettings undefined on init");
@@ -36,13 +37,9 @@ var arduinoUtilities = {
             } else {
                 arduinoUtilities.extInformation = eRuntimeInformation;
             }
-            if (typeof arduinoAddr == "undefined") {
-                console.warn("[ARDUINO] library init called without address specified, must be initialized seperately");
-            } else {
-                arduinoUtilities.connectArduino(arduinoAddr, eRuntimeSettings, eRuntimeInformation).catch( err => {
-                    return reject("[ARDUINO] connection failed with err message: "+err);
-                });
-            }
+
+            //Create the command queue
+            arduinoUtilities.commandQueue = new deviceCommandQueue("ArduinoQueue", eRuntimeSettings.arduinoCommandTimeout, false);
             return resolve(); //if it wasn't rejected then it's ok
         });
     },
@@ -165,6 +162,19 @@ var arduinoUtilities = {
     },
 
     handleArduinoData: function(data) {
+        return new Promise((resolve, reject) => {
+            let sData = String(data).split("");
+            for (let i=0; i<sData.length; i++) {
+                arduinoUtilities.arduinoCommandBuffer+=sData[i];
+                if (sData[i] == ";") { //we've reached the end of a command
+                    arduinoUtilities.commandQueue.checkForCompletions(arduinoUtilities.arduinoCommandBuffer.toLowerCase());
+                    arduinoUtilities.arduinoCommandBuffer = ""; //reset command buffer
+                }
+            }
+            return resolve();
+        });
+
+/*
         return new Promise( (resolve, reject) => {
             var sdata = String(data).split("");
             for (var i=0; i<sdata.length; i++) {
@@ -210,57 +220,53 @@ var arduinoUtilities = {
                     arduinoUtilities.arduinoCommandBuffer+=sdata[i]; //if it's not recognized, just add it to the buffer
                 }
             }
-        });
+        });*/
     },
 
+
+/*
     processCommandNoArg: function(command) {
+        //Make it lowercase
+        command = command.toLowerCase();
+
+        //Pass to commandQueue
+        arduinoUtilities.commandQueue.checkForCompletions(command);
     },
 
     processCommandSingleArg: function(command, value) {
-        if (command.toLowerCase().indexOf("exist") >= 0) { //Set exists flag
-            arduinoUtilities.arduinoExists = true;
+        //Lowercase it
+        command = command.toLowerCase();
+        value = value.toLowerCase();
+
+        //Pass to commandQueue
+        arduinoUtilities.commandQueue.checkForCompletions(command, value);
+    },
+
+    processCommandMultiArg: function(command, values) {
+        //Make elements from values lowercase
+        for (let i=0; i<values.length; i++) {
+            values[i] = values[i].toLowerCase();
         }
-    },
-
-    processCommandMultiArg: function(command, value) {
-
-    },
+        //Pass to commandQueue
+        arduinoUtilities.commandQueue.checkForCompletions(command, values);
+    },*/
 
     setupExistenceCheck: function(runtimeInfo) {
         return new Promise((resolve, reject) => {
-            if (arduinoUtilities.existenceCheckPresent) {
+            if (arduinoUtilities.existenceCheckPresent) { //Prevent multiple existence checks
                 console.warn("[ARDUINO] Existence check has already been started");
                 return reject();
             } else {
                 arduinoUtilities.existenceCheckPresent = true;
 
                 setInterval( () => {
-                    if (arduinoUtilities.debugMode) {
-                        console.log("[ARDUINO] existence check testing start");
-                    }
-                    //Step 0: set flag false
-                    arduinoUtilities.arduinoExists = false;
-
-                    //Step 1: Set max data time recv timeout
-                    let dataRecvTimeout = setTimeout(() => {
-                        console.log("[ARDUINO] existence testing finished; Arduino disconnected");
+                    arduinoUtilities.sendCommand("ex", "", "exist|true").then(() => {
+                        console.log("[ARDUINO] existence testing finished; arduino passed existence check");
+                        runtimeInfo.arduinoConnected = true;
+                    }).catch(err => {
+                        console.log("[ARDUINO] existence testing failed; Arduino disconnected");
                         runtimeInfo.arduinoConnected = false;
-                        clearInterval(startCmdSendInterval);
-                    }, arduinoUtilities.extSettings.portCheckDataTimeout);
-
-                    //Step 2: Start sending existence check commands every 100ms
-                    let startCmdSendInterval = setInterval(() => {
-                        arduinoUtilities.arduinoObject.write(arduinoUtilities.extSettings.arduinoOKCommand+arduinoUtilities.arduinoCommandSplitChar);
-                        if (arduinoUtilities.arduinoExists) {
-                            if (arduinoUtilities.debugMode) {
-                                console.log("[ARDUINO] existence testing finished; arduino passed existence check");
-                            }
-                            //Clear intervals and timeouts
-                            clearInterval(startCmdSendInterval);
-                            clearTimeout(dataRecvTimeout);
-                            runtimeInfo.arduinoConnected = true;
-                        }
-                    },100);
+                    });
 
                 }, arduinoUtilities.extSettings.arduinoCheckPresentInterval);
 
@@ -269,11 +275,37 @@ var arduinoUtilities = {
         });
     },
 
-    sendCommand: function(command,value) {
+    sendCommand: function(command, value, responseCommand, responseValue) {
+        responseCommand = responseCommand || command.toLowerCase(); //Response represents the command ID that we expect to recieve
+        var acceptedResponse;
+        if (responseValue) { //if we're looking for a specific value, make the response include that
+            acceptedResponse = responseCommand+arduinoUtilities.arduinoCommandValueChar+responseValue+arduinoUtilities.arduinoCommandSplitChar;
+        } else {
+            acceptedResponse = responseCommand;
+        }
+        return new Promise((resolve, reject) => {
+            //Actually send the raw command to the arduino or other device
+            let interval = setInterval(() => {
+                arduinoUtilities.sendRawCommand(command, value);
+            },100);
+
+            //Set up the command queue item
+            arduinoUtilities.commandQueue.addItem(acceptedResponse).then(resp => {
+                clearInterval(interval);
+                return resolve(resp);
+            }).catch(err => {
+                clearInterval(interval);
+                return reject(err);
+            });
+            
+        });
+    },
+
+    sendRawCommand: function(command, value) {
         if (typeof arduinoUtilities.arduinoObject == "undefined") {
             arduinoUtilities.setArduinoFakeClass(); //if it's undefined set the fake class in case it hasn't been done already
         }
-        if (typeof value == "undefined") {
+        if (typeof value == "undefined" || value == "") {
             arduinoUtilities.arduinoObject.write(command+arduinoUtilities.arduinoCommandSplitChar);
         } else {
             arduinoUtilities.arduinoObject.write(command+arduinoUtilities.arduinoCommandValueChar+value+arduinoUtilities.arduinoCommandSplitChar);

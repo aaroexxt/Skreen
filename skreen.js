@@ -300,6 +300,23 @@ arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
 			arduinoUtils.setupExistenceCheck(runtimeInformation).then(() => {
 				console.importantLog("Arduino existence check enabled (4/4)");
 				console.importantInfo("ARDU INIT OK");
+
+				arduinoUtils.sendCommand("li", "", "leds|true").then(resp => {
+					console.log("GOT LI RESP");
+					arduinoUtils.sendCommand("lo", "", "leds|false").then(resp => {
+						console.log("GOT LO RESP");
+					}).catch(err => {
+						console.log("LO ERR");
+					});
+				}).catch(err => {
+					console.log("LI ERR");
+				});
+
+				arduinoUtils.commandQueue.addItem("exist|true").then(() => {
+					console.importantLog("Got external exist secondary listener");
+				}).catch(e => {
+					console.error("ext exist list err="+e);
+				})
 			}).catch( err => {
 				console.error("Ardu init error (enabling sensorupdates): "+err);
 			});

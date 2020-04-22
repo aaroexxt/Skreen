@@ -53,18 +53,15 @@ function deferAndQuerableAndTimeout(timeout) {
 	});
 
 	// Observe the promise, saving the fulfillment in a closure scope.
-    var result = promise.then(
-        function(v) {
-            isFulfilled = true;
-            isPending = false;
-            return v; 
-        }, 
-        function(e) {
-            isRejected = true;
-            isPending = false;
-            throw e; 
-        }
-    );
+    promise.then(v => {
+        isFulfilled = true;
+        isPending = false;
+    });
+   	promise.catch(e => {
+        isRejected = true;
+        isPending = false; 
+    });
+
 
     //Set accesor functions on promise (querable portion)
     promise.isFulfilled = function() { return isFulfilled; }
@@ -101,7 +98,7 @@ class QueueItem {
 			if (this.strictEqCheck) {
 				return (this.lookingFor == toMatch);
 			} else {
-				return (this.lookingFor.indexOf(toMatch) >= 0);
+				return (toMatch.indexOf(this.lookingFor) >= 0);
 			}
 		} else {
 			if (toMatch.length == this.lookingFor.length) {
@@ -111,7 +108,7 @@ class QueueItem {
 							return false;
 						}
 					} else {
-						if (this.lookingFor[i].indexOf(toMatch[i]) < 0) { //If any element differs
+						if (toMatch[i].indexOf(this.lookingFor[i]) < 0) { //If any element differs
 							return false;
 						}
 					}
@@ -123,9 +120,10 @@ class QueueItem {
 		}
 	}
 
-	complete() {
+	complete(ifFoundPassthrough) {
+		ifFoundPassthrough = ifFoundPassthrough || this.lookingFor; //ifFoundPassthrough represents return data that needs to be passed through to the result handlers, if not defined just pass through the event name
 		for (let i=0; i<this.promises.length; i++) {
-			this.promises[i].resolve(this.lookingFor);
+			this.promises[i].resolve(ifFoundPassthrough);
 		}
 	}
 }
@@ -141,14 +139,18 @@ class DeviceQueue {
 		this.queue = [];
 	}
 
-	checkCompletions(lookingFor) {
-		this.prune(lookingFor); //First prune the queue tree
+	checkForCompletions(lookingFor, ifFoundPassthrough) {
+		debugLog("Checking for completions w/str='"+lookingFor+"'");
+
+		//Prune the queue tree to remove queued elements that have timed out
+		this.prune(lookingFor);
 
 		let i = 0;
 		while (i < this.queue.length) {
 			let elem = this.queue[i];
-			if (elem.checkCompletion(lookingFor)) {
-				elem.complete(); //call complete on it
+			if (elem.checkCompletion(lookingFor)) { //If it matches
+				debugLog("Elem at idx="+i+" hit for str='"+lookingFor+"'", this.queueName);
+				elem.complete(ifFoundPassthrough); //call complete on it
 				this.queue.splice(i, 1); //remove the element
 			} else { //If we didn't find it, increment the index
 				i++;
@@ -156,26 +158,29 @@ class DeviceQueue {
 		}
 	}
 
-	prune(lookingFor) {
+	prune() {
 		//Iterate through elements in queue list
 		//Iterate through each element's promises
 		//If a promise has timed out/errored out, remove it
 		//If all promises have been removed, then remove the queue element
 
+		debugLog("Now pruning queue tree", this.queueName);
 		let i = 0;
 		while (i < this.queue.length) {
 			let elem = this.queue[i];
 			let j = 0;
 			while (j < elem.promises.length) {
 				if (elem.promises[j].isRejected()) { //use querable property that's been added to promise
-					debugLog("Pruned promise in queue idx="+i+" looking for string '"+elem.lookingFor+"' at promise index "+j, this.queueName);
+					debugLog("Pruned promise in queue idx="+i+" at promise index "+j, this.queueName);
 					elem.promises.splice(j, 1); //remove the promise
 				} else {
 					j++;
 				}
 			}
+
+			//After we've removed the rejected promises, are there any left? if not, then we should remove the element from the queue
 			if (elem.promises.length == 0) {
-				debugLog("Element in queue idx="+i+" looking for string '"+elem.lookingFor+"' has no more promises; removing it"), this.queueName;
+				debugLog("Element in queue idx="+i+" has no more promises; removing it", this.queueName);
 				this.removeItem(i);
 			} else {
 				i++;
@@ -196,7 +201,7 @@ class DeviceQueue {
 				let queueElem = this.queue[i];
 				if (queueElem.lookingFor == lookingFor) { //We found a command in the list already
 					foundQueueElem = true;
-					debugLog("QueueElem matching lf string '"+lookingFor+"' found, adding promise", this.queueName);
+					debugLog("QueueElem matching lf string '"+lookingFor+"' found at idx="+i+", adding promise", this.queueName);
 					queueElem.addPromise().then(resp => {
 						debugLog("QueueElem returned resp "+resp, this.queueName);
 						return resolve(resp);
@@ -209,7 +214,7 @@ class DeviceQueue {
 			}
 
 			if (!foundQueueElem) { //It wasn't in the already existent queue list
-				debugLog("No matching queueElem found, adding to command list (idx: '"+this.length+"', lookingFor: '"+lookingFor+"', strictEqCheck: '"+this.strictEqCheck+"', timeout: '"+this.timeout+"'", this.queueName);
+				debugLog("No matching queueElem found, adding to command list (idx: '"+this.queue.length+"', lookingFor: '"+lookingFor+"', strictEqCheck: '"+this.strictEqCheck+"', timeout: '"+this.timeout+"'", this.queueName);
 				let newItem = new QueueItem(this.length, lookingFor, this.strictEqCheck, this.timeout);
 				newItem.addPromise().then(resp => {
 					debugLog("QueueElem returned resp "+resp, this.queueName);
@@ -225,6 +230,13 @@ class DeviceQueue {
 }
 
 module.exports = DeviceQueue;
+
+
+/*
+TODODODODODODODS
+1) fix debug mode
+2) make it so queue items also send commands when they're at top of list
+*/
 
 /*
 //TEST CODE

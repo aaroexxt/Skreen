@@ -28,6 +28,7 @@
 
         "arduinoBaudRate": 9600,
         "portCheckDataTimeout": 4000,
+        "arduinoCommandTimeout": 5000,
         "arduinoOKCommand": "ex",
         "arduinoCheckPresentInterval": 60000,
 
