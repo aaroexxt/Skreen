@@ -8,6 +8,7 @@
 */
 
 const serialPort = require('serialport'); //require serialport driver
+const deviceCommandQueue = require('deviceCommandQueue');
 
 var arduinoUtilities = {
     debugMode: true,

@@ -29,7 +29,7 @@
         "arduinoBaudRate": 9600,
         "portCheckDataTimeout": 4000,
         "arduinoOKCommand": "ex",
-        "arduinoCheckPresentInterval": 10000,
+        "arduinoCheckPresentInterval": 60000,
 
         "jsonDBPath": "data/userDB.json",
 
@@ -57,7 +57,7 @@
         "tracksToLoad": -1,
 
         "noArtworkUrl": "/images/noAlbumArt.png",
-        "defaultVolume": 50,
+        "defaultVolume": 100,
         "currentVolume": 50,
         "autoplayTrack": true,
         "volStep": 10,
