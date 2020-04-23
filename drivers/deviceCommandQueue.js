@@ -10,13 +10,13 @@
 
 /*
 
-CLIENT 1: requests Event 1
-Server: queue empty, sends event 1 to device
+CLIENT 1: requests Event 1 and is looking for response 0
+Server: queue empty, sends event 1 to device every 100ms, waiting for response 0
 CLIENT 2: request Event 2
 Server: adds event 2 to queue (pending event 1)
 CLINET 1: requests Event 3
 Server: adds event 3 to queue (pending event 1)
-CLIENT 2: requests event 1
+CLIENT 2: requests event 1 and is looking for response 1
 Server: adds event 1 to queue (pending event 1)
 Server: recieves event 1
 Server: sends event 1 response to client 1 and 2
@@ -24,67 +24,91 @@ Server: proceeds to next element in queue, sends event 2 to device
 ETC
 */
 
-const debugLog = (msg, name) => {
-	console.log("[DEVCMDQ"+(name ? ("-"+name) : "")+"]: "+JSON.stringify(msg).replace(/\"/g,""));
+//When debugMode is not specified pass this in
+const overrideDebugMode = true;
+
+const debugLog = (msg, queue) => {
+	if (typeof queue == "undefined") {
+		queue = {
+			debugMode: false,
+			queueName: undefined
+		}
+	}
+	if (!queue.debugMode) {
+		return;
+	}
+	console.log("[DEVCMDQ"+((typeof queue.queueName != "undefined") ? ("-"+queue.queueName) : "")+"]: "+JSON.stringify(msg).replace(/\"/g,""));
 }
 
-//Janky hack to allow resolving promises externally and to allow checking their state
+
+//Modified from great Medium article: https://medium.com/@UtkarshPramodGupta/how-to-make-a-stateful-promise-in-javascript-4e08418716ad
+class QueryablePromise extends Promise {
+  constructor (executor) {
+    super((resolve, reject) => executor(
+      data => {
+        resolve(data)
+        this._status = 'Resolved'
+      },
+      err => {
+        reject(err)
+        this._status = 'Rejected'
+      },
+    ))
+    this._status = 'Pending'
+  }
+
+  get status() {
+    return this._status;
+  }
+
+  get isFulfilled() {
+  	return (this._status == "Resolved");
+  }
+
+  get isPending() {
+  	return (this._status == "Pending");
+  }
+
+  get isRejected() {
+  	return (this._status == "Rejected");
+  }
+}
+
+//Janky hack to allow resolving promises externally
 //From a number of sources on google lol (I don't really remember)
 function deferAndQuerableAndTimeout(timeout) {
 	var res, rej;
 
-	// Set initial state
-    var isPending = true;
-    var isRejected = false;
-    var isFulfilled = false;
-
-	var promise = new Promise((resolve, reject) => {
+	var promise = new QueryablePromise((resolve, reject) => { //Use Queryable promise to be able to resolve state externally
 		res = resolve;
 		rej = reject;
 
 		if (timeout && timeout > 0) {
 			debugLog("Timeout being set for "+timeout+"ms");
 			setTimeout(() => {
-				reject("TIMEOUT");
+				return reject("TIMEOUT");
 			}, timeout);
 		} else {
 			debugLog("No timeout set; doesn't meet conditions");
 		}
 	});
 
-	// Observe the promise, saving the fulfillment in a closure scope.
-    promise.then(v => {
-        isFulfilled = true;
-        isPending = false;
-    });
-   	promise.catch(e => {
-        isRejected = true;
-        isPending = false; 
-    });
-
-
-    //Set accesor functions on promise (querable portion)
-    promise.isFulfilled = function() { return isFulfilled; }
-    promise.isPending = function() { return isPending; };
-    promise.isRejected = function() { return isRejected; };
-
     //Set resolve/reject functions on promise (externally resolvable/rejectable)
 	promise.resolve = res;
 	promise.reject = rej;
-
 
 	return promise;
 }
 
 class QueueItem {
-	constructor(idx, lf, strictEqCheck, timeout) {
+	constructor(commandToSend, lookingForResponse, strictEqCheck, timeout) {
 		//Initialize stuff
-		this.index = idx || -1;
 		this.timeout = timeout || -1;
 		this.promises = [];
-		this.strictEqCheck = strictEqCheck || false;
+		this.strictEqCheck = (typeof strictEqCheck == "undefined") ? false : strictEqCheck;
 
-		this.lookingFor = lf;
+		this.commandToSend = commandToSend; //Okay if it's undefined since that's a possible case; just means it's a "listener" only and won't emit commands
+		this.lookingFor = lookingForResponse;
 	}
 
 	addPromise() {
@@ -129,11 +153,13 @@ class QueueItem {
 }
 
 class DeviceQueue {
-	constructor(queueName, timeout, strictEqCheck) {
+	constructor(queueName, timeout, strictEqCheck, debugMode) {
 		this.queueName = queueName || "unspecified";
-		this.strictEqCheck = strictEqCheck || false;
 		this.timeout = timeout || -1;
-		debugLog("Initializing new DeviceQueue with name='"+queueName+"', timeout='"+timeout+"', strictEqCheck='"+(strictEqCheck ? "true" : "false")+"'");
+		this.debugMode = (typeof debugMode == "undefined") ? false : debugMode;
+		this.strictEqCheck = (typeof strictEqCheck == "undefined") ? false : strictEqCheck;
+
+		console.log("Initializing new DeviceQueue with name='"+this.queueName+"', timeout='"+this.timeout+"', strictEqCheck='"+(this.strictEqCheck ? "true" : "false")+"'"+", debugMode='"+(this.debugMode ? "true" : "false")+"'");
 
 		//Perform intialization
 		this.queue = [];
@@ -149,7 +175,8 @@ class DeviceQueue {
 		while (i < this.queue.length) {
 			let elem = this.queue[i];
 			if (elem.checkCompletion(lookingFor)) { //If it matches
-				debugLog("Elem at idx="+i+" hit for str='"+lookingFor+"'", this.queueName);
+				debugLog("Elem at idx="+i+" hit for str='"+lookingFor+"'", this);
+				debugLog("Removing element at idx="+i+" because it is completed", this);
 				elem.complete(ifFoundPassthrough); //call complete on it
 				this.queue.splice(i, 1); //remove the element
 			} else { //If we didn't find it, increment the index
@@ -164,14 +191,14 @@ class DeviceQueue {
 		//If a promise has timed out/errored out, remove it
 		//If all promises have been removed, then remove the queue element
 
-		debugLog("Now pruning queue tree", this.queueName);
+		//debugLog("Now pruning queue tree", this);
 		let i = 0;
 		while (i < this.queue.length) {
 			let elem = this.queue[i];
 			let j = 0;
 			while (j < elem.promises.length) {
-				if (elem.promises[j].isRejected()) { //use querable property that's been added to promise
-					debugLog("Pruned promise in queue idx="+i+" at promise index "+j, this.queueName);
+				if (elem.promises[j].isRejected) { //use querable property that's been added to promise
+					debugLog("Pruned promise in queue idx="+i+" at promise index "+j, this);
 					elem.promises.splice(j, 1); //remove the promise
 				} else {
 					j++;
@@ -180,7 +207,7 @@ class DeviceQueue {
 
 			//After we've removed the rejected promises, are there any left? if not, then we should remove the element from the queue
 			if (elem.promises.length == 0) {
-				debugLog("Element in queue idx="+i+" has no more promises; removing it", this.queueName);
+				debugLog("Element in queue idx="+i+" has no more promises; removing it", this);
 				this.removeItem(i);
 			} else {
 				i++;
@@ -192,21 +219,41 @@ class DeviceQueue {
 		this.queue.splice(idx, 1); //remove the element
 	}
 
-	addItem(lookingFor) {
+	addItem(commandToSend, lookingFor, timeoutOverride) {
 		return new Promise((resolve, reject) => {
-			debugLog("AddItem called, checking queue...", this.queueName);
+			let lfUND = (typeof lookingFor == "undefined");
+			let cmdUND = (typeof commandToSend == "undefined");
+			if (lfUND && cmdUND) {
+				return reject("CmdToSend and LookingFor undefined; specify at least one");
+			}
+			let matchType = (lfUND && !cmdUND) ? "lf" : (!lfUND && cmdUND) ? "cmd" : "both"; //determine matching type
+
+			debugLog("AddItem called, checking queue...", this);
 
 			let foundQueueElem = false;
 			for (let i=0; i<this.queue.length; i++) {
 				let queueElem = this.queue[i];
-				if (queueElem.lookingFor == lookingFor) { //We found a command in the list already
+				let match;
+				switch (matchType) {
+					case "lf":
+						match = queueElem.lookingFor == lookingFor;
+						break;
+					case "cmd":
+						match = queueElem.commandToSend == commandToSend;
+						break;
+					case "both":
+					default:
+						match = (queueElem.lookingFor == lookingFor) && (queueElem.commandToSend == commandToSend);
+						break;
+				}
+				if (match) { //We found a command in the list already
 					foundQueueElem = true;
-					debugLog("QueueElem matching lf string '"+lookingFor+"' found at idx="+i+", adding promise", this.queueName);
+					debugLog("QueueElem matching lf string '"+(lookingFor||"unspecified")+"' and/or commandToSend '"+(commandToSend||"unspecified")+"' w/match type '"+matchType+"' found at idx="+i+", adding promise", this);
 					queueElem.addPromise().then(resp => {
-						debugLog("QueueElem returned resp "+resp, this.queueName);
+						debugLog("QueueElem returned resp "+resp, this);
 						return resolve(resp);
 					}).catch(err => {
-						debugLog("QueueElem returned err "+err, this.queueName);
+						debugLog("QueueElem '"+queueElem.lookingFor+"' returned err "+err, this);
 						return reject(err);
 					});
 					break;
@@ -214,18 +261,67 @@ class DeviceQueue {
 			}
 
 			if (!foundQueueElem) { //It wasn't in the already existent queue list
-				debugLog("No matching queueElem found, adding to command list (idx: '"+this.queue.length+"', lookingFor: '"+lookingFor+"', strictEqCheck: '"+this.strictEqCheck+"', timeout: '"+this.timeout+"'", this.queueName);
-				let newItem = new QueueItem(this.length, lookingFor, this.strictEqCheck, this.timeout);
+				debugLog("No matching queueElem found, adding to command list (idx: '"+this.queue.length+"', lookingFor: '"+(lookingFor||"unspecified")+"', commandToSend: '"+(commandToSend||"unspecified")+"', strictEqCheck: '"+this.strictEqCheck+"', timeout: '"+this.timeout+"'", this);
+				let newItem = new QueueItem(commandToSend, lookingFor, this.strictEqCheck, (timeoutOverride || this.timeout));
 				newItem.addPromise().then(resp => {
-					debugLog("QueueElem returned resp "+resp, this.queueName);
+					debugLog("QueueElem returned resp "+resp, this);
 					return resolve(resp);
 				}).catch(err => {
-					debugLog("QueueElem returned err "+err, this.queueName);
+					debugLog("QueueElem '"+lookingFor+"' returned err "+err, this);
 					return reject(err);
 				});
 				this.queue.push(newItem);
 			}
-		})
+		});
+	}
+
+	hasElemThatCanSendCommand() {
+		this.prune(); //Prune queue
+
+		let validLen = 0;
+		for (let i=0; i<this.queue.length; i++) {
+			if (typeof this.queue[i].commandToSend != "undefined") {
+				validLen++;
+			}
+		}
+		return (validLen > 0);
+	}
+
+	getTopElemWithCommand() {
+		this.prune(); //Prune queue
+
+		//Iterate thru queue
+		for (let i=0; i<this.queue.length; i++) {
+			if (typeof this.queue[i].commandToSend != "undefined") {
+				return this.queue[i]; //if it's valid, return it
+			}
+		}
+		return false;
+	}
+
+	queueDump() {
+		console.log("***Full Queue Dump***");
+		if (this.queue.length > 0) {
+			for (let i=0; i<this.queue.length; i++) {
+				let elem = this.queue[i];
+				console.log("Idx:\t\t\t\t"+i);
+				console.log("Timeout:\t\t\t"+elem.timeout);
+				console.log("StrictEqCheck:\t\t\t"+elem.strictEqCheck);
+				console.log("LookingFor:\t\t\t"+elem.lookingFor);
+				console.log("CommandToSend:\t\t\t"+elem.commandToSend);
+				console.log("Promises:");
+				for (let j=0; j<elem.promises.length; j++) {
+					console.log("\tIdx:\t\t\t"+j);
+					console.log("\tisPending:\t\t"+elem.promises[j].isPending);
+					console.log("\tisRejected:\t\t"+elem.promises[j].isRejected);
+					console.log("\tisFulfilled:\t\t"+elem.promises[j].isFulfilled);
+					console.log("---");
+				}
+				console.log("-------");
+			}
+		}
+		console.log("-- End Full Queue Dump --");
+		return;
 	}
 }
 
@@ -233,9 +329,9 @@ module.exports = DeviceQueue;
 
 
 /*
-TODODODODODODODS
-1) fix debug mode
-2) make it so queue items also send commands when they're at top of list
+Potential TODODODODODODODS?
+1) Queue items now have a state to them (i.e. waiting, sending, failed, succeeded)
+2) timeouts for queue events start on state change
 */
 
 /*

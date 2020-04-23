@@ -291,34 +291,44 @@ loggingUtils.init(cwd, runtimeSettings).then( () => {
 var arduinoUtils = require('./drivers/arduino.js'); //require the driver;
 runtimeInformation.arduinoConnected = false;
 arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
-	console.importantLog("Arduino driver initialized successfully (1/4)");
+	console.importantLog("Arduino driver initialized successfully (1/5)");
 	arduinoUtils.findArduino().then(arduinoAddr => {
-		console.importantLog("Arduino located on serial port '"+arduinoAddr+"' successfully (2/4)");
+		console.importantLog("Arduino located on serial port '"+arduinoAddr+"' successfully (2/5)");
 		arduinoUtils.connectArduino(arduinoAddr).then( () => {
-			console.importantLog("Arduino connected successfully (3/4)");
+			console.importantLog("Arduino connected successfully (3/5)");
 			runtimeInformation.arduinoConnected = true;
 			arduinoUtils.setupExistenceCheck(runtimeInformation).then(() => {
-				console.importantLog("Arduino existence check enabled (4/4)");
-				console.importantInfo("ARDU INIT OK");
+				console.importantLog("Arduino existence check enabled (4/5)");
+				arduinoUtils.setupQueueCommandSending().then(() => {
+					console.importantLog("Arduino queue command sending setup OK (5/5)");
+					console.importantInfo("ARDU INIT OK");
 
-				arduinoUtils.sendCommand("li", "", "leds|true").then(resp => {
-					console.log("GOT LI RESP");
-					arduinoUtils.sendCommand("lo", "", "leds|false").then(resp => {
+
+					//Now test queue by adding 3 tasks for it to do at once
+
+					let pNew = arduinoUtils.commandQueue.addItem(undefined,"exist|true");
+
+					pNew.then(() => {
+						console.importantLog("Got external exist secondary listener");
+					}).catch(e => {
+						console.error("ext exist list err="+e);
+					});
+					/*arduinoUtils.sendCommand("li", "", "leds", "true").then(resp => {
+						console.log("GOT LI RESP");
+					}).catch(err => {
+						console.log("LI ERR");
+					});
+
+					arduinoUtils.sendCommand("lo", "", "leds", "false").then(resp => {
 						console.log("GOT LO RESP");
 					}).catch(err => {
 						console.log("LO ERR");
-					});
+					});*/
 				}).catch(err => {
-					console.log("LI ERR");
-				});
-
-				arduinoUtils.commandQueue.addItem("exist|true").then(() => {
-					console.importantLog("Got external exist secondary listener");
-				}).catch(e => {
-					console.error("ext exist list err="+e);
+					console.error("Ardu init error (enabling queue command sending): "+err);
 				})
 			}).catch( err => {
-				console.error("Ardu init error (enabling sensorupdates): "+err);
+				console.error("Ardu init error (enabling existence check): "+err);
 			});
 		}).catch( err => {
 			console.error("Failed to connect to arduino for the following reason: '"+err+"'");
@@ -376,26 +386,24 @@ stdinputListener.addPersistentListener("*",function(d) {
 process.on('SIGINT', function (code) { //on ctrl+c or exit
 	console.importantLog("\nSIGINT signal recieved, graceful exit (garbage collection) w/code "+code);
 	runtimeInformation.status = "Exiting";
-	arduinoUtils.sendCommand("status","Exiting");
-	console.importantLog("Exiting in 500ms");
-	setTimeout(function(){
-		process.exit(); //exit completely
-	},500);
+	process.exit(); //exit completely
 });
 /*
 process.on('uncaughtException', function (err) { //on error
 	console.importantLog("\nCRASH REPORT\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\nError:\n"+err+"\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\n");
-	console.importantLog("Exiting in 1500ms");
 	console.importantLog("\nError signal recieved, graceful exiting (garbage collection)");
-	arduinoUtils.sendCommand("status","Error");
 	runtimeInformation.status = "Error";
 	process.exit();
-});
+});*/
 process.on('unhandledRejection', (reason, p) => {
-    console.error("Unhandled Promise Rejection at: Promise ", p, " reason: ", reason);
+    console.error("Unhandled Promise Rejection at: Promise ");
+    console.error(p);
+    console.error(p.name);
+    console.error("Because reason: ", reason.stack || reason);
     process.exit();
 });
-*/
+
+
 /***********************************
 --I12-- MUSIC INIT CODE --I12--
 ***********************************/
