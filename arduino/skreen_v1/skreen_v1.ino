@@ -1,9 +1,8 @@
 /**
- * LED Music Visualizer
- * by Devon Crawford
+ * Skreen Music Visualizer
+ * Original code by Devon Crawford
+ * Heavily modified by Aaron Becker
  * using the FastLED library: http://fastled.io/
- * April 22, 2018
- * Watch the video: https://youtu.be/lU1GVVU9gLU
  */
 #include "FastLED.h"
 #define REAL_NUM_LEDS 1100
@@ -350,8 +349,8 @@ void processCommand(String input) {
       clearLEDS();
     } else if (command.equals("ex")) {
       Serial.print("EXIST|true;");
-    } else if (command.equals("s-vm")) {
-      Serial.print("SVM|");
+    } else if (command.equals("vm")) {
+      Serial.print("VM|");
       float valueConv = value.toFloat();
       if (valueConv > 0.0 && valueConv < 100.0) {
         brightnessMin = valueConv/100.0000;

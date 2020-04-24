@@ -302,28 +302,6 @@ arduinoUtils.init(runtimeSettings, runtimeInformation).then(() => {
 				arduinoUtils.setupQueueCommandSending().then(() => {
 					console.importantLog("Arduino queue command sending setup OK (5/5)");
 					console.importantInfo("ARDU INIT OK");
-
-
-					//Now test queue by adding 3 tasks for it to do at once
-
-					let pNew = arduinoUtils.commandQueue.addItem(undefined,"exist|true");
-
-					pNew.then(() => {
-						console.importantLog("Got external exist secondary listener");
-					}).catch(e => {
-						console.error("ext exist list err="+e);
-					});
-					/*arduinoUtils.sendCommand("li", "", "leds", "true").then(resp => {
-						console.log("GOT LI RESP");
-					}).catch(err => {
-						console.log("LI ERR");
-					});
-
-					arduinoUtils.sendCommand("lo", "", "leds", "false").then(resp => {
-						console.log("GOT LO RESP");
-					}).catch(err => {
-						console.log("LO ERR");
-					});*/
 				}).catch(err => {
 					console.error("Ardu init error (enabling queue command sending): "+err);
 				})
@@ -448,7 +426,8 @@ const express = require("express");
 var APIrouter = express.Router();
 var SCrouter = express.Router();
 var AUTHrouter = express.Router();
-var MAProuter = express.Router();
+var ARDUrouter = express.Router();
+var LIGHTSrouter = express.Router();
 
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
@@ -626,7 +605,7 @@ app.use(function(req, res, next) { //default listener that sets session values
 });
 
 //MAIN ROUTES
-app.get("/client", function(req, res, next) { //COS main route
+app.get("/client", function(req, res, next) { //Skreen main route
 	console.log(JSON.stringify(req.session)+" session");
 
 	console.log('Inside GET /authrequired callback')
@@ -969,15 +948,85 @@ SCrouter.get("/changeUser/:user", function(req, res) {
 	}
 });
 
+//Arduino routes
+ARDUrouter.get("/on", (req, res) => {
+	arduinoUtils.sendCommand("li","", "leds","true").then(() => {
+		res.end(RequestHandler.SUCCESS());
+	}).catch(e => {
+		res.end(RequestHandler.FAILURE(e));
+	});
+});
+
+ARDUrouter.get("/off", (req, res) => { //haha funny name I get it
+	arduinoUtils.sendCommand("lo","", "leds","false").then(() => {
+		res.end(RequestHandler.SUCCESS());
+	}).catch(e => {
+		res.end(RequestHandler.FAILURE(e));
+	});
+});
+
+ARDUrouter.get("/settings/lightMode/:newMode", (req, res) => {
+	let newMode = req.params.newMode;
+	if (newMode > 0 && newMode <= 2) {
+		arduinoUtils.sendCommand("lm", newMode, "lm", newMode).then(() => {
+			res.end(RequestHandler.SUCCESS());
+		}).catch(e => {
+			res.end(RequestHandler.FAILURE(e));
+		});
+	} else {
+		res.end(RequestHandler.FAILURE("Illegal mode specified"));
+	}
+});
+
+ARDUrouter.get("/settings/valueMinimum/:newValueMin", (req, res) => {
+	let newValueMin = req.params.newValueMin;
+	if (newValueMin > 0 && newValueMin < 100) {
+		arduinoUtils.sendCommand("vm", newValueMin, "vm", newValueMin).then(() => {
+			res.end(RequestHandler.SUCCESS());
+		}).catch(e => {
+			res.end(RequestHandler.FAILURE(e));
+		});
+	} else {
+		res.end(RequestHandler.FAILURE("Illegal value minimum specified"));
+	}
+});
+
+ARDUrouter.get("/settings/ledUpdateCount/:newCount", (req, res) => {
+	let nC = req.params.newCount;
+	arduinoUtils.sendCommand("ul", nC, "ul", nC).then(() => {
+		res.end(RequestHandler.SUCCESS());
+	}).catch(e => {
+		res.end(RequestHandler.FAILURE(e));
+	});
+});
+
+ARDUrouter.get("/realtime/volume", (req, res) => {
+	arduinoUtils.sendCommand("cv","", "current_volume").then(value => { //Don't specify return value so it will match anything
+		res.end(RequestHandler.SUCCESS(value));
+	}).catch(e => {
+		res.end(RequestHandler.FAILURE(e));
+	});
+});
+
+ARDUrouter.get("/realtime/frequency", (req, res) => {
+	arduinoUtils.sendCommand("cf", "", "current_frequency").then(value => { //Don't specify return value so it will match anything
+		res.end(RequestHandler.SUCCESS(value));
+	}).catch(e => {
+		res.end(RequestHandler.FAILURE(e));
+	});
+});
+
+/*
 //Catch anything that falls through
 app.use(function(req, res, next){
 	res.status(404); //crappy 404 page
 	res.send("<h1>Uhoh, you tried to go to a page that doesn't exist.</h1><br> Navigate to /client to go to the main page.");
 });
-
+*/
 //Attach endpoints to app
 app.use('/login', AUTHrouter); //connect login to auth router
 app.use('/api', APIrouter); //connect api to main
+app.use('/ardu/', ARDUrouter);
 APIrouter.use('/SC', SCrouter); //connect soundcloud router to api
 
 console.log("[AUTH] Init server begun");

@@ -39,7 +39,7 @@ var arduinoUtilities = {
             }
 
             //Create the command queue
-            arduinoUtilities.commandQueue = new deviceCommandQueue("ArduinoQueue", eRuntimeSettings.arduinoCommandTimeout, false, true);
+            arduinoUtilities.commandQueue = new deviceCommandQueue("ArduinoQueue", eRuntimeSettings.arduinoCommandTimeout, false, arduinoUtilities.debugMode);
             return resolve(); //if it wasn't rejected then it's ok
         });
     },
@@ -162,6 +162,9 @@ var arduinoUtilities = {
     },
 
     handleArduinoData: function(data) {
+        if (arduinoUtilities.debugMode) {
+            console.log("[ARDUINO] raw data recv: '"+data+"'");
+        }
         return new Promise((resolve, reject) => {
             let sData = String(data).split("");
             for (let i=0; i<sData.length; i++) {
@@ -202,7 +205,7 @@ var arduinoUtilities = {
     setupQueueCommandSending: function() {
         return new Promise((resolve, rejet) => {
             setInterval(() => {
-                if (arduinoUtilities.debugMode) {
+                if (arduinoUtilities.debugMode && arduinoUtilities.commandQueue.queue.length > 0) {
                     arduinoUtilities.commandQueue.queueDump();
                 }
                 if (arduinoUtilities.commandQueue.hasElemThatCanSendCommand()) {
@@ -218,11 +221,11 @@ var arduinoUtilities = {
                     }
 
                     arduinoUtilities.arduinoObject.write(rawCommand);
-                } else {
+                }/* else {
                     if (arduinoUtilities.debugMode) {
                         console.log("Queue is empty of valid elements");
                     }
-                }
+                }*/
             },arduinoUtilities.extSettings.arduinoSendCommandInterval);
 
             return resolve();
@@ -242,6 +245,25 @@ var arduinoUtilities = {
         return new Promise((resolve, reject) => {
             //Set up the command queue item
             arduinoUtilities.commandQueue.addItem(fullCommand, acceptedResponse).then(resp => {
+                if (resp.indexOf(arduinoUtilities.arduinoCommandSplitChar) >= 0) { //Remove the trailing semicolon if it exists
+                    resp = resp.substring(0, resp.lastIndexOf(arduinoUtilities.arduinoCommandSplitChar));
+                }
+
+                if (resp.indexOf(arduinoUtilities.arduinoCommandValueChar) >= 0) {
+                    let splitResp = resp.split(arduinoUtilities.arduinoCommandValueChar);
+                    if (splitResp.length == 1) { //No value case
+                        return resolve(splitResp[0]);
+                    } else if (splitResp.length == 2) { //Single value case
+                        return resolve(splitResp[1]);
+                    } else { //Multiple values case
+                        let returnArr = [];
+                        for (let i=1; i<splitResp.length; i++) {
+                            returnArr.push(splitResp[i]);
+                        }
+                        return resolve(returnArr);
+                    }
+                }
+                //If none of the special cases need to happen, just return the raw command, since we don't know what to do with it
                 return resolve(resp);
             }).catch(err => {
                 return reject(err);

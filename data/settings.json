@@ -30,7 +30,7 @@
         "portCheckDataTimeout": 4000,
         "arduinoCommandTimeout": 5000,
         "arduinoOKCommand": "ex",
-        "arduinoSendCommandInterval": 300,
+        "arduinoSendCommandInterval": 100,
         "arduinoCheckPresentInterval": 60000,
 
         "jsonDBPath": "data/userDB.json",

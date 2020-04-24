@@ -75,7 +75,7 @@ class QueryablePromise extends Promise {
 }
 
 //Janky hack to allow resolving promises externally
-//From a number of sources on google lol (I don't really remember)
+//Modified from this cool site: http://lea.verou.me/2016/12/resolve-promises-externally-with-this-one-weird-trick/
 function deferAndQuerableAndTimeout(timeout) {
 	var res, rej;
 
@@ -165,7 +165,7 @@ class DeviceQueue {
 		this.queue = [];
 	}
 
-	checkForCompletions(lookingFor, ifFoundPassthrough) {
+	checkForCompletions(lookingFor) {
 		debugLog("Checking for completions w/str='"+lookingFor+"'");
 
 		//Prune the queue tree to remove queued elements that have timed out
@@ -177,7 +177,7 @@ class DeviceQueue {
 			if (elem.checkCompletion(lookingFor)) { //If it matches
 				debugLog("Elem at idx="+i+" hit for str='"+lookingFor+"'", this);
 				debugLog("Removing element at idx="+i+" because it is completed", this);
-				elem.complete(ifFoundPassthrough); //call complete on it
+				elem.complete(lookingFor); //call complete on it w/full lookingFor string as pass through
 				this.queue.splice(i, 1); //remove the element
 			} else { //If we didn't find it, increment the index
 				i++;
