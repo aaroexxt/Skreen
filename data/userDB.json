@@ -9,7 +9,7 @@
     {
       "id":"d1u9nq",
       "name": "test@test.com",
-      "password": "$2a$10$2NWRAqjKGU/dXWwcFjinAelS2D1n9Z0XX7ygwfw9ar8N8vbGVq3Um",
+      "password": "$2a$10$TdSEwTmcg7hrH5shT3tJ/uMPf6aHrD2ZkJHb6wOVwECtZ.kwoXfUu",
       "isAdmin": false
     },
     {
@@ -21,7 +21,8 @@
   ],
   "passcodes": [
     "$2a$10$W/NG5Fwao7FG0pGw9ip.P.UNjo0jKwJAkbJmdgIqVoOM12SiVtxfS",
-    "$2a$10$CM3dZfIAUdk4xBHe7HjUb.bLz9be0k4Qw94n0M64dvRYiFseXb23m"
+    "$2a$10$CM3dZfIAUdk4xBHe7HjUb.bLz9be0k4Qw94n0M64dvRYiFseXb23m",
+    "$2a$10$nXosPotpE5/V6NwPhNOvl.1WqxApB7dNjkQXT.zr7k7iRy1GozQEO"
   ],
   "passcodeUser": {
     "id":"_internal__passcode",

@@ -11,7 +11,7 @@ const serialPort = require('serialport'); //require serialport driver
 const deviceCommandQueue = require('./deviceCommandQueue.js');
 
 var arduinoUtilities = {
-    debugMode: true,
+    debugMode: false,
     arduinoCommandSplitChar: ";",
     arduinoCommandValueChar: "|",
     commandQueue: undefined,
@@ -188,10 +188,14 @@ var arduinoUtilities = {
 
                 setInterval( () => {
                     arduinoUtilities.sendCommand("ex", "", "exist", "true").then(() => {
-                        console.log("[ARDUINO] existence testing finished; arduino passed existence check");
+                        if (arduinoUtilities.debugMode) {
+                            console.log("[ARDUINO] existence testing finished; arduino passed existence check");
+                        }
                         runtimeInfo.arduinoConnected = true;
                     }).catch(err => {
-                        console.log("[ARDUINO] existence testing failed; Arduino disconnected");
+                        if (arduinoUtilities.debugMode) {
+                            console.log("[ARDUINO] existence testing failed; Arduino disconnected");
+                        }
                         runtimeInfo.arduinoConnected = false;
                     });
 

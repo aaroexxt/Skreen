@@ -10,7 +10,6 @@
 //Dependencies
 const fetch = require('node-fetch');
 const remoteFileSize = require("remote-file-size");
-const utils = require("./utils.js");
 const path = require('path');
 const fs = require('fs');
 

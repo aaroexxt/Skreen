@@ -31,7 +31,7 @@ class timingM {
 
 			res.on("data", function(chunk) {
 				self.ipAddr = chunk;
-				timingLog("Ip Addr get OK");
+				timingLog("Ip Addr get OK: '"+chunk+"'");
 				self.checkEvents(); //check for outstanding events
 			});
 		}).on('error', function(e) {
@@ -56,7 +56,7 @@ class timingM {
 				parsedHours = 0; //12am special case
 			}
 
-			times.push([parsedHours,parsedMinutes]);
+			times.push([parsedHours, parsedMinutes]);
 
 			let maxLevel = tsArr[i].maxLevel;
 			//let minLevel = tsArr[i].minLevel; TODO MINLEVEL
@@ -68,24 +68,27 @@ class timingM {
 		this.trgTimes = times;
 		this.trgLevels = level;
 		this.trgDevices = devices;
+		this.enabled = true; //set enabled flag
 
-		this.updateLoop = setInterval(function(){self.checkEvents()},60000); //setup interval handler to check minutes
+		this.updateLoop = setInterval(function(){self.checkEvents()},30000); //setup interval handler to check minutes
 
 		
 	}
 
 	checkEvents() {
 		timingLog("CheckEvents called using ipAddr: "+this.ipAddr);
+		if (!this.enabled) { //If we're not enabled
+			return;
+		}
 		function reject(e) {
 			console.warn("TimerSetting failed during event because "+e);
 		}
 
 		this.getCurrentTime().then(time => {
 			//Process: once we have time, check which events could potentially be relevant and issue the appropriate request
-			timingLog("TimeEvent at "+JSON.stringify(time));
 			for (let i=0; i<this.tsArr.length; i++) {
 				if (this.trgTimes[i][0] == time.hours && this.trgTimes[i][1] == time.minutes) { //event match
-					timingLog("TimeEvent at "+JSON.stringify(time));
+					timingLog("TimeEvent postcheck at "+JSON.stringify(time));
 					var checkLight = index => {
 						this.hubInstance.lookupDeviceName(this.trgDevices[i][index], this.trgLevels[i]).then(device => {
 							//console.log("dN: "+device.identifier);
@@ -119,6 +122,16 @@ class timingM {
 		}).catch(e => console.log("Failed to getCurrentTime because: "+e));
 	}
 
+	enableTimers() {
+		timingLog("Timing enabled");
+		this.enabled = true;
+	}
+
+	disableTimers() {
+		timingLog("Timing disabled");
+		this.enabled = false;
+	}
+
 	getCurrentTime() {
 		return new Promise((resolve, reject) => {
 			http.get({
@@ -134,8 +147,8 @@ class timingM {
 				res.on("data", function(chunk) {
 					try {
 						var data = JSON.parse(chunk.toString());
-						var d = new Date(Date.parse(data.utc_datetime)+(data.raw_offset*1000));
-						return resolve ({hours: d.getHours(), minutes: d.getMinutes()});
+						var d = new Date(Date.parse(data.datetime));//+(data.raw_offset*1000));
+						return resolve({hours: d.getHours(), minutes: d.getMinutes()});
 					} catch(e) {
 						return reject("JSON parsing error");
 					}

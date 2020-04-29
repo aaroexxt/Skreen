@@ -68,7 +68,6 @@ Runtime Code (1 step):
 **********************************/
 const fs = require('fs');
 const os = require('os');
-const utils = require('./drivers/utils.js'); //include the utils file
 const path = require('path');
 const singleLineLog = require('single-line-log').stdout; //single line logging
 
@@ -78,12 +77,12 @@ process.title = "Skreen V1";
 /**********************************
 --I2-- RUNTIME INFO/SETTINGS --I2--
 **********************************/
-var PRODUCTIONMODE = false;
 var runtimeSettings = {}; //holds settings like maximum passcode tries
 var runtimeInformation = {}; //holds information like version, arduino. Updated while running
 var soundcloudSettings = {};
 var neuralSettings = {};
 var airplaySettings = {};
+var lutronSettings = {};
 
 try {
 	var settingsData = JSON.parse(fs.readFileSync(path.join(cwd,"/data/settings.json")));
@@ -104,12 +103,12 @@ shallowCopy(settingsData.soundcloudSettings, soundcloudSettings);
 shallowCopy(settingsData.settings, runtimeSettings);
 shallowCopy(settingsData.neuralSettings, neuralSettings);
 shallowCopy(settingsData.airplaySettings, airplaySettings);
+shallowCopy(settingsData.lutronSettings, lutronSettings);
 
-PRODUCTIONMODE = settingsData.PRODUCTION; //production mode?
 runtimeSettings.loginMessage = settingsData.loginMessage;
 
 //console.clear();
-console.log("~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\nSkreen V0.1\nBy AAron Becker\nPORT: "+runtimeSettings.serverPort+"\nCWD: "+cwd+"\nPID: "+process.pid+"\n~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\n");
+console.log("~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\nSkreen V0.2\nBy AAron Becker\nPORT: "+runtimeSettings.serverPort+"\nCWD: "+cwd+"\nPID: "+process.pid+"\n~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-\n");
 
 /***************************
 --I4-- CONSOLE COLORS --I4--
@@ -130,15 +129,6 @@ if (runtimeSettings.loginMessage && runtimeSettings.loginMessage[0] && runtimeSe
 	originalLog(colors.italic.bold.green(runtimeSettings.loginMessage[runtimeSettings.loginMessage.length-1]));
 } else {
 	originalErr(colors.red("No runtimeMessage provided in json config when it is required"));
-}
-if (PRODUCTIONMODE) {
-	originalLog(colors.blue("PRODUCTION_MODE is enabled, will only show important information"));
-	runtimeSettings.logLevel = 1; //set to errors only
-	singleLineLog.clear();
-	setInterval( () => {
-		var statusStr = "-- Status: "+colors.green(runtimeInformation.status)+" ~~ Uptime: "+colors.green(runtimeInformation.uptime)+" ~~ Users: "+colors.green(runtimeInformation.users)+" --";
-		singleLineLog(statusStr);
-	},500);
 }
 
 if (runtimeSettings.logLevel < 4) {
@@ -336,11 +326,10 @@ NeuralMatcher.init(neuralSettings)
 /*******************************
 --I10-- READING FROM STDIN --I10--
 *******************************/
-
-var stdinput = process.openStdin();
-var stdinputListener = new utils.advancedEventListener(stdinput,"data");
+const advancedEventListener = require("./drivers/advancedEventListener.js");
+var stdinputListener = new advancedEventListener(process.openStdin(),"data"); //register stdin to listener
 var sendArduinoMode = false;
-stdinputListener.addPersistentListener("*",function(d) {
+stdinputListener.addPersistentListener("*",function(d) { //All events, set to persist
 	var uI = d.toString().trim();
 	console.log("you entered: [" + uI + "]");
 	if (uI == "help") {
@@ -363,14 +352,12 @@ stdinputListener.addPersistentListener("*",function(d) {
 
 process.on('SIGINT', function (code) { //on ctrl+c or exit
 	console.importantLog("\nSIGINT signal recieved, graceful exit (garbage collection) w/code "+code);
-	runtimeInformation.status = "Exiting";
 	process.exit(); //exit completely
 });
 /*
 process.on('uncaughtException', function (err) { //on error
 	console.importantLog("\nCRASH REPORT\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\nError:\n"+err+"\n-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~\n");
 	console.importantLog("\nError signal recieved, graceful exiting (garbage collection)");
-	runtimeInformation.status = "Error";
 	process.exit();
 });*/
 process.on('unhandledRejection', (reason, p) => {
@@ -396,19 +383,58 @@ soundManager.init(soundcloudSettings, airplaySettings, cwd).then( () => {
 });
 
 
-/******************************
---I16-- MISC. INIT CODE --I16--
-******************************/
+/***********************************
+--I13-- LIGHTS INIT CODE --I13--
+***********************************/
+const telnetHandler = require("./drivers/telnetM.js");
+const timingHandler = require("./drivers/timingM.js");
+console.log("Required all packages successfully");
 
-var statusUpdateInterval = setInterval(function(){
-	var time = process.uptime();
-	var uptime = utils.formatHHMMSS(time); //rts.uptime
-	runtimeInformation.uptime = uptime;
-	sessionFileStore.length(function session_count(a,len) {
-		runtimeInformation.users = len;
-	});  //rts.users
-},1000);
-runtimeInformation.status = "Running";
+//JSON file parsing
+const rdContents = fs.readFileSync(lutronSettings.roomDataPath, 'utf8');
+var roomData = JSON.parse(rdContents);
+
+//Hub connection via telnet server
+const hub = new telnetHandler(lutronSettings.baseHubIP, lutronSettings.baseHubUser, lutronSettings.baseHubPass, roomData);
+var hubConnected = false;
+hub.begin().then(() => {
+	hubConnected = true;
+	console.importantInfo("LUTRON/LIGHTS INIT OK");
+	/**** EXAMPLE USAGE
+
+	Single light (by device identifier):
+
+	SET VALUE
+	hub.setLightOutput(2,0).then(() => {
+		console.log("Success");
+	}).catch(e => {
+		console.error("Light output value fail: "+e);
+	});
+
+	GET VALUE
+	hub.getLightOutput(2).then(value => {
+			console.log("Light output value: "+value);
+	}).catch(e => {
+		console.error("Light output value fail: "+e);
+	});
+
+	Location (room, by room name):
+
+	hub.setLocationLight("AaronsRoom",100).then(() => {
+		console.log("AaronsRoom success");
+	}).catch(e => {
+		console.error(e);
+	})
+	*/
+}).catch(e => {
+	console.error("Hub connection failure: "+e);
+	process.exit(1);
+});
+
+//Timer setup for autodimming of lights, etc
+const timing = new timingHandler(roomData.timeShift, hub); //pass in hub reference to allow control
+timing.enableTimers(); //by default, enable the timers
+
 
 /***************************************
 --R1-- HTTP SERVER SETUP/HANDLING --R1--
@@ -492,10 +518,22 @@ app.use(bodyParser.json());
 
 const sessionFileStore = new FileStore(); //create the session file store
 
+
+//Simple UUID generation
+function generateUUID(){
+    var d = new Date().getTime();
+    var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        var r = (d + Math.random()*16)%16 | 0;
+        d = Math.floor(d/16);
+        return (c=='x' ? r : (r&0x3|0x8)).toString(16);
+    });
+    return uuid;
+}
+
 app.use(session({
 	genid: (req) => {
 		console.log('Inside UUID-generation');
-		return utils.generateUUID(); // use UUIDs for session IDs
+		return generateUUID(); // use UUIDs for session IDs
 	},
 	store: sessionFileStore, //filestore for sessions
 	secret: "k3yB0ARdC@3t5s!", //set secret to new ID
@@ -521,25 +559,22 @@ passport.use(new LocalStrategy(
 		for (var i=0; i<allUserData.length; i++) {
 			if (allUserData[i].name == name) { //Is the name the same? Okay we located the user
 				if (!bcrypt.compareSync(password, allUserData[i].password)) {
-					req.session.regularAttemptNumber++;
 					return done(null, false, { message: 'Invalid credentials: password invalid.\n' });
 				} else {
-					req.session.regularAttemptNumber = 0;
 					return done(null, allUserData[i]);
 				}
 			}
 		}
-		req.session.regularAttemptNumber++;
 		return done(null, false, { message: 'Invalid credentials: user not found (und in db).\n' });
 	} catch (e) {
-		req.session.regularAttemptNumber++;
 		return done(null, false, { message: 'Invalid credentials: user not found (err in db lookup).\n' });
 	}
   }
 ));
+//Use https://www.browserling.com/tools/bcrypt to add passcodes
 passport.use('passcode', new CustomStrategy( function(req, done) {
 	if (typeof req.body.passcode !== "undefined") {
-		console.log("psc entered="+req.body.passcode);
+		//console.log("psc entered="+req.body.passcode);
 		let passcodes = db.getData("/passcodes/");
 		let pscUser = db.getData("/passcodeUser/");
 		for (var i=0; i<passcodes.length; i++) {
@@ -610,7 +645,7 @@ app.get("/client", function(req, res, next) { //Skreen main route
 
 	console.log('Inside GET /authrequired callback')
 	console.log(`User authenticated? ${req.isAuthenticated()}`)
-	if(req.isAuthenticated() || runtimeSettings.disableLogin) {
+	if (req.isAuthenticated() || runtimeSettings.disableLogin) {
 		fs.readFile(path.join(cwd,runtimeSettings.defaultFileDirectory,runtimeSettings.defaultClientFile), function (err, buf) {
 			if (err) {
 				res.end("Error reading client file (this shouldn't happen?)");
@@ -642,26 +677,24 @@ app.get('/login', (req, res) => {
 })
 
 //AUTH ROUTES
-AUTHrouter.get('/regular', (req, res, next) => {
-    res.redirect("/login");
-});
 AUTHrouter.post('/regular', (req, res, next) => {
     console.log('Inside POST request on /loginRegular, sessID: '+req.sessionID)
     passport.authenticate('local', (err, user, info) => {
-        if(info) {return res.send(RequestHandler.FAILURE(info.message))}
-        if (err) { return next(err); }
+        if(info) {req.session.regularAttemptNumber++; return res.send(RequestHandler.FAILURE(info.message))}
+        if (err) {req.session.regularAttemptNumber++; return next(err); }
         if (!user) { return res.redirect('/login'); }
+        req.session.regularAttemptNumber = 0;
         req.login(user, (err) => {
           if (err) { return next(err); }
           console.log("You were authenticated :)")
           return res.end(RequestHandler.SUCCESS());
-        })
+        });
     })(req, res, next);
 });
-
-AUTHrouter.get('/passcode', (req, res, next) => {
-    res.redirect("/login");
+AUTHrouter.get('/regular', (req, res, next) => {
+	res.redirect("/client");
 });
+
 AUTHrouter.post('/passcode', bodyParser.json(), (req, res, next) => {
     console.log('Inside POST request on /loginPasscode, sessID: '+req.sessionID)
     passport.authenticate('passcode', (err, user, info) => {
@@ -676,6 +709,9 @@ AUTHrouter.post('/passcode', bodyParser.json(), (req, res, next) => {
         })
     })(req, res, next);
 });
+AUTHrouter.get('/passcode', (req, res, next) => {
+	res.redirect("/client");
+});
 
 //API ROUTES
 APIrouter.use(function(req, res, next) { //Middleware to check whether the user is authenticated
@@ -683,7 +719,7 @@ APIrouter.use(function(req, res, next) { //Middleware to check whether the user 
 	if(req.isAuthenticated() || runtimeSettings.disableLogin) {
 		next();
 	} else {
-		return res.end(401, RequestHandler.FAILURE("Error: Not authenticated to make API request to APIRouter"));
+		return res.status(401).end(RequestHandler.FAILURE("Error: Not authenticated to make API request to APIRouter"));
 	}
 });
 
@@ -851,12 +887,23 @@ SCrouter.get("/clientUpdate", function(req, res) {
         //console.log("SCClientUpdate");
         var ps = soundManager.trackTimer.getPlayedSeconds();
 
+        function formatHHMMSS(seconds) {
+			function pad(s){
+				return (s < 10 ? '0' : '') + s;
+			}
+			var hours = Math.floor(seconds / (60*60));
+			var minutes = Math.floor(seconds % (60*60) / 60);
+			var seconds = Math.floor(seconds % 60);
+
+			return pad(hours) + ':' + pad(minutes) + ':' + pad(seconds);
+		}
+
         var internalSCSettings = soundManager.getSoundcloudObject().localSoundcloudSettings; //used to access internal SC settings that are not kept by SoundManager but rather by the soundcloud module itself. mostly a polyfill from the old days when there was only soundcloud.js
         res.end(RequestHandler.SUCCESS({
             currentPlayingTrack: soundManager.currentPlayingTrack || {},
             percent: soundManager.trackTimer.getPlayedPercent(),
             playedSeconds: ps,
-            timeStamp: utils.formatHHMMSS(ps),
+            timeStamp: formatHHMMSS(ps),
             playingTrack: soundManager.playingTrack,
             playingAirplay: soundManager.playingAirplay,
             settingsData: {
@@ -948,7 +995,10 @@ SCrouter.get("/changeUser/:user", function(req, res) {
 	}
 });
 
-//Arduino routes
+/*
+* ARDUINO ROUTES
+*/
+
 ARDUrouter.get("/on", (req, res) => {
 	arduinoUtils.sendCommand("li","", "leds","true").then(() => {
 		res.end(RequestHandler.SUCCESS());
@@ -1017,16 +1067,98 @@ ARDUrouter.get("/realtime/frequency", (req, res) => {
 });
 
 /*
-//Catch anything that falls through
-app.use(function(req, res, next){
-	res.status(404); //crappy 404 page
-	res.send("<h1>Uhoh, you tried to go to a page that doesn't exist.</h1><br> Navigate to /client to go to the main page.");
-});
+* LIGHTS ROUTES
 */
+
+// POST requests - write to devices
+LIGHTSrouter.post("/deviceName/:device/:newValue", function(req, res) {
+	let deviceName = req.params.device;
+	let newValue = req.params.newValue;
+	hub.lookupDeviceName(deviceName).then(deviceObject => {
+		hub.getLightOutput(deviceObject.identifier).then(currentValue => {
+			let ramp = (newValue >= currentValue) ? deviceObject.rampUpTime : deviceObject.rampDownTime;
+			hub.setLightOutput(deviceObject.identifier, newValue, ramp).then(() => {
+				return res.end(RequestHandler.SUCCESS());
+			}).catch(e => {
+				return res.end(RequestHandler.FAILURE("Error setting light value: "+e+"\n"));
+			})
+		}).catch(e => {
+			return res.end(RequestHandler.FAILURE("Error getting light output value: "+e+"\n"));
+		})
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Device lookup failed: "+e+"\n"));
+	});
+});
+LIGHTSrouter.post("/device/:device/:newValue", function(req, res) {
+	let device = req.params.device;
+	let newValue = req.params.newValue;
+	hub.lookupDeviceIdentifier(device).then(deviceObject => {
+		hub.getLightOutput(deviceObject.identifier).then(currentValue => {
+			let ramp = (newValue >= currentValue) ? deviceObject.rampUpTime : deviceObject.rampDownTime;
+			hub.setLightOutput(deviceObject.identifier, newValue, ramp).then(() => {
+				return res.end(RequestHandler.SUCCESS());
+			}).catch(e => {
+				return res.end(RequestHandler.FAILURE("Error setting light value: "+e+"\n"));
+			})
+		}).catch(e => {
+			return res.end(RequestHandler.FAILURE("Error getting light output value: "+e+"\n"));
+		})
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Device lookup failed: "+e+"\n"));
+	});
+});
+LIGHTSrouter.post("/locationName/:location/:newValue", function(req, res) {
+	let locName = req.params.location;
+	let newValue = req.params.newValue;
+	hub.setLocationLight(locName,newValue).then(() => {
+		return res.end(RequestHandler.SUCCESS());
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Error setting room value: "+e+"\n"));
+	})
+});
+
+
+//GET requests - get device information
+LIGHTSrouter.get("/deviceName/:deviceName/", function(req, res) {
+	let deviceName = req.params.deviceName;
+	hub.lookupDeviceName(deviceName).then(deviceObject => {
+		hub.getLightOutput(deviceObject.identifier).then(currentValue => {
+			return res.end(RequestHandler.SUCCESS(currentValue));
+		}).catch(e => {
+			return res.end(RequestHandler.FAILURE("Error getting light output value: "+e+"\n"));
+		});
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Error getting light output value: "+e+"\n"));
+	})
+});
+LIGHTSrouter.get("/device/:device/", function(req, res) {
+	let device = req.params.device;
+	hub.getLightOutput(device).then(currentValue => {
+		return res.end(RequestHandler.SUCCESS(currentValue));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Error getting light output value: "+e+"\n"));
+	})
+});
+LIGHTSrouter.get("/locationName/:location/", function(req, res) {
+	let location = req.params.location;
+	hub.getLocationLight(location).then(currentValue => {
+		return res.end(RequestHandler.SUCCESS(currentValue));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE("Error getting location output value: "+e+"\n"));
+	})
+});
+
+
+//Catch anything that falls through and just send to client
+/*app.use(function(req, res, next){
+	res.redirect("/client");
+});*/
+
 //Attach endpoints to app
 app.use('/login', AUTHrouter); //connect login to auth router
 app.use('/api', APIrouter); //connect api to main
-app.use('/ardu/', ARDUrouter);
+APIrouter.use('/ardu/', ARDUrouter);
+APIrouter.use('/light/', LIGHTSrouter);
 APIrouter.use('/SC', SCrouter); //connect soundcloud router to api
 
 console.log("[AUTH] Init server begun");

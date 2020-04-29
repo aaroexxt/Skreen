@@ -9,6 +9,7 @@
 */
 
 /*
+Ideal behavior (so I can visualize response):
 
 CLIENT 1: requests Event 1 and is looking for response 0
 Server: queue empty, sends event 1 to device every 100ms, waiting for response 0
@@ -22,6 +23,10 @@ Server: recieves event 1
 Server: sends event 1 response to client 1 and 2
 Server: proceeds to next element in queue, sends event 2 to device
 ETC
+
+Improvements:
+- make it so that there is a 3x retry on each command instead of delay before timeout
+- as soon as you get response you send next command so everything operates as fast as it could possibly be
 */
 
 //When debugMode is not specified pass this in
@@ -144,10 +149,19 @@ class QueueItem {
 		}
 	}
 
+	//Complete - QueueItem was successfully completed, remove from queue
 	complete(ifFoundPassthrough) {
 		ifFoundPassthrough = ifFoundPassthrough || this.lookingFor; //ifFoundPassthrough represents return data that needs to be passed through to the result handlers, if not defined just pass through the event name
 		for (let i=0; i<this.promises.length; i++) {
 			this.promises[i].resolve(ifFoundPassthrough);
+		}
+	}
+
+	//incomplete - QueueItem had an error, remove from queue
+	incomplete(ifFoundPassthrough) {
+		ifFoundPassthrough = ifFoundPassthrough || this.lookingFor; //ifFoundPassthrough represents return data that needs to be passed through to the result handlers, if not defined just pass through the event name
+		for (let i=0; i<this.promises.length; i++) {
+			this.promises[i].reject(ifFoundPassthrough);
 		}
 	}
 }

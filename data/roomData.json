@@ -1,21 +1,19 @@
 {
 	"devices": {
-		"AaronR": {
-			"identifier": 2,
-			"power": 100,
+		"AaronL": {
+			"identifier": 3,
 			"rampUpTime": "00:01",
 			"rampDownTime": "00:01"
 		},
-		"AaronL": {
-			"identifier": 3,
-			"power": 100,
+		"AaronR": {
+			"identifier": 12,
 			"rampUpTime": "00:01",
 			"rampDownTime": "00:01"
 		}
 	},
 	"locations": {
 		"AaronsRoom": {
-			"devices": ["AaronR","AaronL"]
+			"devices": ["AaronL","AaronR"]
 		}
 	},
 	"timeShift": [

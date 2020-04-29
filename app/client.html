@@ -7,6 +7,7 @@
 		<script src="/js/utils.js"></script>
 		<script src="/js/speaker.js"></script>
 		<script src="/js/annyang.js"></script>
+		<script src="/js/jquery-3.5.0.min.js"></script>
 		<script src="/js/speechkitt.min.js"></script>
 		<script src="/js/bootbox.min.js"></script>
 		<script src="/js/bootstrap.min.js"></script>
@@ -32,13 +33,13 @@
 				<li class="menubreaker">|</li>
 				<li><img src="/images/music.png" width="35" height="35" id="menuButtonMusic" onclick="globals.modules.menu.methods.changeMenu('music');" class="circle"></img></li>
 				<li class="menubreaker">|</li>
-				<li><img src="/images/browser.png" width="35" height="35" id="menuButtonBrowser" onclick="globals.modules.menu.methods.changeMenu('browser');" class="circle"></img></li>
+				<li><img src="/images/discoball.png" width="35" height="35" id="menuButtonMusicLights" onclick="globals.modules.menu.methods.changeMenu('musicLights');" class="circle"></img></li>
 				<li class="menubreaker">|</li>
 				<li><img src="/images/a.png" width="40" height="40" onclick="globals.modules.runtimeEvents.methods.getRuntimeInformation(); setTimeout( () => {globals.modules.popupDisplay.methods.displayMain()},300);"></img></li>
 				<li class="menubreaker">|</li>
-				<li><img src="/images/lightbulb.png" width="35" height="35" id="menuButtonStats" onclick="globals.modules.menu.methods.changeMenu('light');" class="circle"></img></li>
+				<li><img src="/images/lightbulb.png" width="35" height="35" id="menuButtonRoomLights" onclick="globals.modules.menu.methods.changeMenu('roomLights');" class="circle"></img></li>
 				<li class="menubreaker">|</li>
-				<li><img src="/images/gear.png" width="35" height="35" id="menuButtonMap" onclick="globals.modules.menu.methods.changeMenu('settings');" class="circle"></img></li>
+				<li><img src="/images/gear.png" width="35" height="35" id="menuButtonLightsSettings" onclick="globals.modules.menu.methods.changeMenu('lightsSettings');" class="circle"></img></li>
 				<li class="menubreaker">|&nbsp;&nbsp;&nbsp;</li>
 				<li class="menuitemnoanim"><p id="time" style="min-width: 150px !important; font-size: 17px; font-family: 'Helvetica Neue';">12:00 AM</p></li> <!-- Does min-width even work? Fix for tmrw-->
 				<li class="menuitemnoanim" id="wifispeed" style="font-size: 14px; transform: none !important; font-family: 'Helvetica Neue'; float: right; margin-right: 1%; margin-top: 20px;">-1 MB/S</li>
@@ -46,15 +47,29 @@
 					<img src="/images/wifi0.png" width="40" height="27" id="wifilevel"></img>
 				</li>
 			</ul>
-			<div id="mainLight" class="fullScreen" style="display: none">
-				<br><br>
-				<p>Filler content</p>
 
-				<div style="position: absolute; bottom: 20px">
+
+			<div id="mainMusicLights" class="fullScreen" style="display: none">
+				<br>
+				<br>
+				<p>Filler content (MAIN MUSIC LIGHTS)</p>
+			</div>
+			<div id="mainRoomLights" class="fullScreen" style="display: none">
+				<br>
+				<br>
+				<p>Filler content (MAIN ROOM LIGHTS)</p>
+
+				<div style="position: absolute; bottom: 200px">
 					<canvas id="stats_speedGauge" width="300px" height="300px"></canvas>
 					<canvas id="stats_rpmGauge" width="300px" height="300px"></canvas>
 					<canvas id="stats_temperatureGauge" width="300px" height="300px"></canvas>
 				</div>
+					
+			</div>
+			<div id="mainLightsSettings" class="fullScreen" style="display: none">
+				<br>
+				<br>
+				<p>Filler content (MAIN LIGHTS SETTINGS)</p>
 			</div>
 			<div id="mainMusic" class="fullScreen" style="display: none">
 				<img width="23.5%" height="45%px" style="float: left; margin-left: 1%; margin-top: 1%; border: 2px groove grey;" id="music_trackArt"></img> <!--always 500px by 500px-->
@@ -87,25 +102,6 @@
 				<li class="controlButton " onclick="globals.modules.music.methods.changeLoopState(); if (globals.modules.music.properties.nextTrackLoop) {this.className+=' activeLoopShuffle';} else {this.className = 'controlButton';}" id="music_loopButton"><img src="/images/repeat.png" width="20px" height="20x"></img></li>
 			</ul>
 			<div class="volumeBottom" id="music_bottomVolumeBar"></div>
-			<div id="mainBrowser" class="fullScreen" style="display: none">
-				<gcse:search class="fullScreen" id="gcsescpt">Loading browser...</gcse:search>
-				<script>
-					(function() {
-					  var cx = '004200655191535526828:9bdqifawysu';
-					  var gcse = document.createElement('script');
-					  gcse.type = 'text/javascript';
-					  gcse.async = true;
-					  gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
-					  var s = document.getElementById("gcsescpt"); s.parentNode.insertBefore(gcse, s);
-					})();
-				</script>
-			</div>
-			<div id="mainStats" class="fullScreen" style="display: none">
-				<br>
-				<br>
-				<p>Filler content</p>
-					
-			</div>
 		</div>
 		<div id="loading">
 			<center>

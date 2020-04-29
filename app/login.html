@@ -1,7 +1,7 @@
 <!DOCTYPE HTML>
 <html> <!-- manifest="data.appcache" -->
 	<head>
-		<title>C.OS. Login</title>
+		<title>Skreen Login</title>
 		<script src="/js/ajax.js"></script>
 		<link rel="stylesheet" type="text/css" media="screen" href="/css/style.css">
 		<link rel="stylesheet" type="text/css" media="screen" href="/css/bootstrap.min.css">
@@ -41,9 +41,9 @@
 						<br>
 						Password:
 						<br>
-						<input type="text" name="password">
+						<input type="password" name="password">
 						<br>
-						<input type="submit" value="Submit">
+						<input onclick="window.location.href='http://'+window.location.host+'/client';" type="submit" value="Submit">
 					</form>
 					<br>
 					<div>
@@ -70,6 +70,7 @@
 						login.passcodeHandles.update();
 					},
 					enterPasscode: function(passcode) {
+						console.log("fetch psc called w/psc="+passcode);
 						fetch('http://'+window.location.host+'/login/passcode', {
 						  method: 'POST',
 						  headers: new Headers({'content-type': 'application/json'}),
@@ -80,8 +81,14 @@
 							if (!response.error && !response.wait && response.message == "") {
 								login.redirectOK();
 							} else {
-								console.error("Recieved non-ok response from passcode: "+JSON.stringify(response));
-								alert("Recieved error when trying to login with passcode: "+JSON.stringify(response));
+								console.warn("Recieved non-ok response from passcode: "+JSON.stringify(response));
+								document.getElementById("login-passcodeField").style.color = "#ff0000";
+								setTimeout(() => {
+									document.getElementById("login-passcodeField").style.color = "#000000";
+									//Clear passcode
+									login.passcodeHandles.tracker = ' ';
+									login.passcodeHandles.update();
+								},250);
 							}
 						})
 						.catch(error => {

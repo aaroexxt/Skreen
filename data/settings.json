@@ -1,16 +1,16 @@
 {
-    "PRODUCTION": false,
     "loginMessage": ["Welcome to\n","███████╗██╗  ██╗██████╗ ███████╗███████╗███╗   ██╗    ██╗   ██╗ ██████╗    ██╗","██╔════╝██║ ██╔╝██╔══██╗██╔════╝██╔════╝████╗  ██║    ██║   ██║██╔═████╗  ███║","███████╗█████╔╝ ██████╔╝█████╗  █████╗  ██╔██╗ ██║    ██║   ██║██║██╔██║  ╚██║","╚════██║██╔═██╗ ██╔══██╗██╔══╝  ██╔══╝  ██║╚██╗██║    ╚██╗ ██╔╝████╔╝██║   ██║","███████║██║  ██╗██║  ██║███████╗███████╗██║ ╚████║     ╚████╔╝ ╚██████╔╝██╗██║","╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚══════╝╚═╝  ╚═══╝      ╚═══╝   ╚═════╝ ╚═╝╚═╝","\nBy Aaron Becker\n"],
 
     "information": {
         "frontendVersion": 1,
         "backendVersion": 1,
         "heartbeatMS": 60000,
-        "dynamicMusicMenu": true
+        "dynamicMusicMenu": true,
+        "arduinoConnected": false
     },
     "settings": {
         "maxLoginAttempts": 10,
-        "disableLogin": false,
+        "disableLogin": true,
 
         "faviconDirectory": "/app/assets/images/favicon.ico",
         "defaultFileDirectory": "/app",
@@ -95,5 +95,11 @@
     "airplaySettings": {
         "serverName": "SkreenBETA",
         "enabled": true
+    },
+    "lutronSettings": {
+        "baseHubIP": "192.168.1.33",
+        "baseHubUser": "lutron",
+        "baseHubPass": "integration",
+        "roomDataPath": "data/roomData.json"
     }
 }
