@@ -1,6 +1,6 @@
 #!/bin/bash
 #To download this file from github, type:
-#wget https://raw.githubusercontent.com/aaroexxt/CarOS/master/installer.sh
+#wget https://raw.githubusercontent.com/aaroexxt/Skreen/master/installer.sh
 #sudo bash ./installer.sh
 clear;
 echo "~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-";
