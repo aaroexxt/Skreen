@@ -1,5 +1,5 @@
 #!/bin/bash
-echo "NODEJS CarOS Updater";
+echo "NODEJS Skreen Updater";
 echo "--------------------"
 cwd=$(pwd)
 echo "CWD: $cwd"
@@ -46,17 +46,17 @@ confirm() {
 }
 
 update() {
-    sudo rm -R "$cwd/tempCAROS" || echo "No CarOS directory found; not deleting"
-    echo "Downloading temporary CarOS directory...";
-    sudo git clone https://github.com/aaroexxt/CarOS.git tempCAROS;
+    sudo rm -R "$cwd/tempSKREEN" || echo "No Skreen directory found; not deleting"
+    echo "Downloading temporary Skreen directory...";
+    sudo git clone https://github.com/aaroexxt/Skreen.git tempSKREEN;
 
     IFS=$'\n'; set -f #set internal field seperator to fix spaces in filenames
-    cd tempCAROS;
+    cd tempSKREEN;
     path=""
     if [ -d "$1" ]; then
         path=$1;
     else
-        path="$cwd/tempCAROS"
+        path="$cwd/tempSKREEN"
     fi
 
     echo "base path: $path"
@@ -65,7 +65,7 @@ update() {
 
     echo "Changing permissions on downloaded folder";
     sudo chmod 777 -R $cwd;
-    sudo rm -R "$cwd/tempCAROS";
+    sudo rm -R "$cwd/tempSKREEN";
 }
 
 function recursivesize() {
@@ -117,8 +117,8 @@ function recursivesize() {
 }
 
 echo "YOU ARE RUNNING THE UPDATE SCRIPT";
-echo "This could potentially erase parts or all of the current CarOS directory, which will destroy changes that you have made.";
-confirm && update;
+echo "This could potentially erase parts or all of the current Skreen directory, which will destroy changes that you have made.";
+confirm && update; #what a fancy oneliner heh
 
 #some kind of awesome glitch happens when I do this
 #for filename in tempCarOS/*; do

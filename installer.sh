@@ -4,8 +4,8 @@
 #sudo bash ./installer.sh
 clear;
 echo "~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-";
-echo "Welcome to the CarOS automated installer script V6, by Aaron Becker.";
-echo "This script will install all other scripts and packages necessary to run CarOS in full.";
+echo "Welcome to the Skreen automated installer script V6, by Aaron Becker.";
+echo "This script will install all other scripts and packages necessary to run Skreen in full.";
 echo "~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-";
 
 abort()
@@ -79,26 +79,26 @@ fi
 echo "Packages installed successfully.";
 echo "Step 2/4: Downloading Installer files...";
 cd "$dir";
-if ! [ -d "CarOS" ]; then
-    echo "CarOS directory doesn't exist. Downloading fresh...";
-    sudo git clone https://github.com/aaroexxt/CarOS.git;
+if ! [ -d "Skreen" ]; then
+    echo "Skreen directory doesn't exist. Downloading fresh...";
+    sudo git clone https://github.com/aaroexxt/Skreen.git;
 else
     while true; do
-        read -r -p "CarOS directory already exists. Would you like to replace it with a new copy? " ans;
+        read -r -p "Skreen directory already exists. Would you like to replace it with a new copy? " ans;
         case $ans in
-            [Yy]* ) echo "Downloading new copy..."; sudo rm -r "CarOS"; sudo git clone https://github.com/aaroexxt/CarOS.git; break;;
+            [Yy]* ) echo "Downloading new copy..."; sudo rm -r "Skreen"; sudo git clone https://github.com/aaroexxt/Skreen.git; break;;
             [Nn]* ) echo "Not downloading new copy. This may cause issues if there is scripts that you don't want run in the folder.";  break;;
             * ) echo "Please answer yes or no (or just y or n).";;
         esac
     done
 fi
-echo "CarOS files downloaded successfully.";
-echo "Step 3/4: CD-ing into new CarOS directory"
-cd "$dir/CarOS";
+echo "Skreen files downloaded successfully.";
+echo "Step 3/4: CD-ing into new Skreen directory"
+cd "$dir/Skreen";
 echo "Step 4/4: Running setup file from directory $dir";
 sudo bash setup.sh;
 echo "~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-~-";
-echo "CarOS is now installed on your machine. If you would like to start it, CD into $dir and run sudo bash start.sh";
+echo "Skreen is now installed on your machine. If you would like to start it, CD into $dir and run sudo node skreen.js";
 END=$(date +%s);
 echo -n "Time: ";
 echo $((END-START)) | awk '{print int($1/3600)"h:"int($1/60)"m:"int($1%60)"s"}';
