@@ -269,7 +269,7 @@ const globals = {
                     var volumeBar = new ProgressBar.Line('#'+mR.properties.volumeBarElement, {
                         strokeWidth: 2,
                         easing: 'easeInOut',
-                        duration: 1400,
+                        duration: 500,
                         color: '#FFEA82',
                         trailColor: '#eee',
                         trailWidth: 1,
