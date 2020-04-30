@@ -17,7 +17,7 @@ const globals = {
             gotRuntimeInformation: false,
             modulesOK: false
         },
-        defaultApp: "map",
+        defaultApp: "music",
         runtimeInformation: {
             frontendVersion: "? (Should Not Happen)",
             backendVersion: "? (Should Not Happen)",
@@ -235,7 +235,7 @@ const globals = {
         },
         music: {
             moduleName: "soundManager",
-            debugMode: true,
+            debugMode: false,
 
             //STATE MACHINE LOGIC
             realState: "uninit",
@@ -311,11 +311,6 @@ const globals = {
                                 document.getElementById(mR.properties.loopButtonElement).className+=' activeLoopShuffle';
                             }
                             console.log("server->client trackLoop:"+mR.properties.nextTrackLoop+",trackShuffle: "+mR.properties.nextTrackShuffle);
-                            
-                            console.log("Initializing soundcloud");
-                            SC.initialize({
-                                client_id: data.clientID
-                            });
 
                             if (!mR.properties.currentPlayingTrack) { //only if not playing track so as to not change message
                                 document.getElementById(mR.properties.trackTitleElement).innerHTML = "Select a track"; //set tracktitle to simple message
@@ -866,6 +861,425 @@ const globals = {
                     roomLights: false,
                     lightsSettings: false
                 }
+            }
+        },
+        musicLightsManager: {
+            moduleName: "musicLightsManager",
+            debugMode: true,
+
+            //STATE MACHINE LOGIC
+            realState: "uninit",
+            set state(state) { //use getter/setter logic
+                if (this.debugMode) {
+                    console.log("changing state in module '"+this.moduleName+"' to '"+state+"'");
+                }
+
+                if (!this.methods[state]) {
+                    console.error("Cannot change state in module name "+this.moduleName+" to new state "+state+" because that method does not exist");
+                } else {
+                    let prevState = this.realState;
+                    try {
+                        this.realState = state;
+                        this.methods[state](this); //run method exposed in methods
+                    } catch(e) {
+                        this.realState = prevState;
+                        console.error("Error changing state in module name "+this.moduleName+" to new state "+state+" because '"+e+"'");
+                    }
+                }
+            },
+            get state() {
+                return this.realState; //return state
+            },
+
+            //METHOD LOGIC
+            methods: {
+                init: function(moduleReference) {},
+
+                lightsOn: function() {
+                    SRH.request("/api/ardu/on");
+                },
+
+                lightsOff: function() {
+                    SRH.request("/api/ardu/off");
+                },
+
+                lightMode: function(newMode) {
+                    SRH.request("/api/ardu/settings/lightMode/"+newMode);
+                },
+
+                newValueMin: function(newVM) {
+                    SRH.request("/api/ardu/settings/valueMinimum/"+newVM);
+                },
+
+                ledUpdateCount: function(newUC) {
+                    SRH.request("/api/ardu/settings/ledUpdateCount/"+newUC);
+                }
+            },
+            properties: {}
+        },
+        roomLightsManager: {
+            moduleName: "roomLightsManager",
+            debugMode: true,
+
+            //STATE MACHINE LOGIC
+            realState: "uninit",
+            set state(state) { //use getter/setter logic
+                if (this.debugMode) {
+                    console.log("changing state in module '"+this.moduleName+"' to '"+state+"'");
+                }
+
+                if (!this.methods[state]) {
+                    console.error("Cannot change state in module name "+this.moduleName+" to new state "+state+" because that method does not exist");
+                } else {
+                    let prevState = this.realState;
+                    try {
+                        this.realState = state;
+                        this.methods[state](this); //run method exposed in methods
+                    } catch(e) {
+                        this.realState = prevState;
+                        console.error("Error changing state in module name "+this.moduleName+" to new state "+state+" because '"+e+"'");
+                    }
+                }
+            },
+            get state() {
+                return this.realState; //return state
+            },
+
+            //METHOD LOGIC
+            methods: {
+                init: function(moduleReference) {
+                    moduleReference.state = "getLocationsList";
+                },
+                getLocationsList: function(mR) {
+                    SRH.request("/api/light/locationsList").then(resp => {
+                        mR.properties.locations = resp;
+                        mR.state = "createLocationElements";
+                    }).catch(e => {
+                        console.error("Error getting location list for lights on init: "+e);
+                    });
+                },
+                createLocationElements: function(mR) {
+                    let locKeys = Object.keys(mR.properties.locations);
+                    let locationContainer = document.getElementById(mR.properties.locationsContainerID);
+                    for (let i=0; i<locKeys.length; i++) {
+                        console.info("LOCKEY init processing: "+locKeys[i]);
+                        //Part 1: create title w/text
+                        let title = document.createElement("h4");
+                        title.className = "leftPad";
+                        title.id = "LOC"+locKeys[i];
+                        let titleText = document.createTextNode(locKeys[i]+": ");
+                        title.appendChild(titleText);
+
+                        //Part 2: create up button
+                        let upButton = document.createElement("button");
+                        upButton.className = "PUpButton";
+                        upButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], 25));
+                        }
+                        let upButtonText = document.createTextNode("Up 25%");
+                        upButton.appendChild(upButtonText);
+
+                        //Part 3: create down button
+                        let downButton = document.createElement("button");
+                        downButton.className = "PDownButton leftPad";
+                        downButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], -25));
+                        }
+                        let downButtonText = document.createTextNode("Down 25%");
+                        downButton.appendChild(downButtonText);
+
+                        //Part 4: create on button
+                        let onButton = document.createElement("button");
+                        onButton.className = "POnButton";
+                        onButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.sendLocationCommand(locKeys[i], 100));
+                        }
+                        let onButtonText = document.createTextNode("On");
+                        onButton.appendChild(onButtonText);
+
+                        //Part 5: create off button
+                        let offButton = document.createElement("button");
+                        offButton.className = "POffButton leftPad";
+                        offButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.sendLocationCommand(locKeys[i], 0));
+                        }
+                        let offButtonText = document.createTextNode("Off");
+                        offButton.appendChild(offButtonText);
+
+                        //Part 6: add element to container in order
+                        locationContainer.appendChild(title);
+                        locationContainer.appendChild(upButton);
+                        locationContainer.appendChild(downButton);
+                        locationContainer.appendChild(document.createElement("br"));
+                        locationContainer.appendChild(document.createElement("br"));
+                        locationContainer.appendChild(onButton);
+                        locationContainer.appendChild(offButton);
+                    }
+
+                    mR.state = "getDevicesList";
+                },
+                getDevicesList: function(mR) {
+                    SRH.request("/api/light/devicesList").then(resp => {
+                        mR.properties.devices = resp;
+                        mR.state = "createDeviceElements";
+                    }).catch(e => {
+                        console.error("Error getting location list for lights on init: "+e);
+                    });
+                },
+                createDeviceElements: function(mR) {
+                    let devKeys = Object.keys(mR.properties.devices);
+                    let deviceContainer = document.getElementById(mR.properties.devicesContainerID);
+                    for (let i=0; i<devKeys.length; i++) {
+                        console.info("DEVKEY init processing: "+devKeys[i]);
+                        //Part 1: create title w/text
+                        let title = document.createElement("h4");
+                        title.className = "leftPad";
+                        title.id = "RM"+devKeys[i];
+                        let titleText = document.createTextNode(devKeys[i]+": ");
+                        title.appendChild(titleText);
+
+                        //Part 2: create up button
+                        let upButton = document.createElement("button");
+                        upButton.className = "PUpButton";
+                        upButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaDeviceNameValue(devKeys[i], 25));
+                        }
+                        let upButtonText = document.createTextNode("Up 25%");
+                        upButton.appendChild(upButtonText);
+
+                        //Part 3: create down button
+                        let downButton = document.createElement("button");
+                        downButton.className = "PDownButton leftPad";
+                        downButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaDeviceNameValue(devKeys[i], -25));
+                        }
+                        let downButtonText = document.createTextNode("Down 25%");
+                        downButton.appendChild(downButtonText);
+
+                        //Part 4: create on button
+                        let onButton = document.createElement("button");
+                        onButton.className = "POnButton";
+                        onButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.sendDeviceNameCommand(devKeys[i], 100));
+                        }
+                        let onButtonText = document.createTextNode("On");
+                        onButton.appendChild(onButtonText);
+
+                        //Part 5: create off button
+                        let offButton = document.createElement("button");
+                        offButton.className = "POffButton leftPad";
+                        offButton.onclick = function() {
+                            mR.methods.domDisableOnPromise(this, mR.methods.sendDeviceNameCommand(devKeys[i], 0));
+                        }
+                        let offButtonText = document.createTextNode("Off");
+                        offButton.appendChild(offButtonText);
+
+                        //Part 6: add element to container in order
+                        deviceContainer.appendChild(title);
+                        deviceContainer.appendChild(upButton);
+                        deviceContainer.appendChild(downButton);
+                        deviceContainer.appendChild(document.createElement("br"));
+                        deviceContainer.appendChild(document.createElement("br"));
+                        deviceContainer.appendChild(onButton);
+                        deviceContainer.appendChild(offButton);
+                    }
+
+                    mR.state = "updateIndices";
+                },
+                updateIndices: function() {
+                    let mR = globals.modules.roomLightsManager;
+                    mR.methods.updateIndexLocations(0); //start updating
+                    mR.methods.updateIndexRooms(0); //start updating
+                },
+                //Workarounds for location auto percentage updating
+                updateIndexLocations: index => {
+                    let mR = globals.modules.roomLightsManager;
+                    let hElems = document.getElementsByTagName("h4");
+                    if (hElems[index].id.indexOf("LOC") > -1) {
+                        mR.methods.getLocationValue(hElems[index].id.replace("LOC","")).then(value => {
+                            let ih = hElems[index].innerHTML;
+                            hElems[index].innerHTML = ih.split(":")[0]+": "+value+"%";
+                        });
+                    }
+
+                    if (index < hElems.length-1) {
+                        mR.methods.updateIndexLocations(index+1);
+                    } else {
+                        console.log("Index updating done for locations");
+                    }
+                },
+                
+                updateIndexRooms: index => {
+                    let hElems = document.getElementsByTagName("h4");
+                    let mR = globals.modules.roomLightsManager;
+                    //console.log(hElems[index].id)
+                    if (hElems[index].id.indexOf("RM") > -1) {
+                        mR.methods.getDeviceNameValue(hElems[index].id.replace("RM","")).then(value => {
+                            let ih = hElems[index].innerHTML;
+                            hElems[index].innerHTML = ih.split(":")[0]+": "+value+"%";
+                        })
+                    }
+
+                    if (index < hElems.length-1) {
+                        mR.methods.updateIndexRooms(index+1);
+                    } else {
+                        console.log("Index updating done for rooms");
+                    }
+                },
+
+                //Helper function to make buttons grey out while we're waiting for a response
+                domDisableOnPromise: function(elem, promise) {
+                    if (elem.getAttribute("disabled") != null) {
+                        console.log("click registered on disabled button");
+                        return false;
+                    }
+                    let originalClassName = JSON.parse(JSON.stringify(elem.className)); //use json hack to prevent memory from being copied
+                    elem.setAttribute("disabled","");
+                    elem.className+=" disabled";
+
+                    let mR = globals.modules.roomLightsManager;
+                    promise.then(() => {
+                        elem.removeAttribute("disabled","");
+                        elem.className = originalClassName;
+                        //Update both location powers and room powers
+                        mR.methods.updateIndexLocations(0);
+                        mR.methods.updateIndexRooms(0);
+                    }).catch(() => {
+                        elem.removeAttribute("disabled","");
+                        elem.className = originalClassName;
+                    });
+                },
+
+                /*
+                * GENERAL DEVICE ACCESSOR FUNCTIONS
+                */
+
+                getDeviceValue: function(device) {
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/device/"+device, {
+                            method: 'get'
+                        }).then(res => res.json()).then(res => {
+                            return resolve(res.message);
+                        }).catch(e => {
+                            return reject(e);
+                        });
+                    })
+                },
+                getDeviceNameValue: function(deviceName) {
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/deviceName/"+deviceName, {
+                            method: 'get'
+                        }).then(res => res.json()).then(res => {
+                            return resolve(res.message);
+                        }).catch(e => {
+                            return reject(e);
+                        });
+                    })
+                },
+                getLocationValue: function(location) {
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/locationName/"+location, {
+                            method: 'get'
+                        }).then(res => res.json()).then(res => {
+                            return resolve(res.message);
+                        }).catch(e => {
+                            return reject(e);
+                        });
+                    });
+                },
+                sendDeviceNameCommand: function(deviceName, value) { 
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/deviceName/"+deviceName+"/"+value, {
+                            method: 'post'
+                        }).then(res => res.json()).then(res => {
+                            console.log(JSON.stringify(res));
+                            return resolve(res);
+                        }).catch(e => {
+                            console.error(JSON.stringify(e));
+                            return reject(e);
+                        });
+                    });
+                },
+                sendDeviceCommand: function(device, value) {
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/device/"+device+"/"+value, {
+                            method: 'post'
+                        }).then(res => res.json()).then(res => {
+                            console.log(JSON.stringify(res));
+                            return resolve(res);
+                        }).catch(e => {
+                            console.error(JSON.stringify(e));
+                            return reject(e);
+                        });
+                    });
+                },
+                sendLocationCommand: function(loc, value) {
+                    return new Promise((resolve, reject) => {
+                        let response = fetch("http://"+document.location.host+"/api/light/locationName/"+loc+"/"+value, {
+                            method: 'post'
+                        }).then(res => res.json()).then(res => {
+                            console.log(JSON.stringify(res));
+                            return resolve(res);
+                        }).catch(e => {
+                            console.error(JSON.stringify(e));
+                            return reject(e);
+                        });
+                    });
+                },
+                deltaDeviceNameValue: function(deviceName, delta) {
+                    let mR = globals.modules.roomLightsManager;
+                    return new Promise((resolve, reject) => {
+                        mR.methods.getDeviceNameValue(deviceName).then(value => {
+                            mR.methods.sendDeviceNameCommand(deviceName, Number(value)+delta).then(res => {
+                                console.log(JSON.stringify(res));
+                                return resolve(res);
+                            }).catch(e => {
+                                console.error(e);
+                                return reject(e);
+                            });
+                        }).catch(e => {
+                            console.error(e);
+                        });
+                    });
+                },
+                deltaDeviceValue: function(device, delta) {
+                    let mR = globals.modules.roomLightsManager;
+                    return new Promise((resolve, reject) => {
+                        mR.methods.getDeviceValue(device).then(value => {
+                            mR.methods.sendDeviceCommand(device, Number(value)+delta).then(res => {
+                                console.log(JSON.stringify(res));
+                                return resolve(res);
+                            }).catch(e => {
+                                console.error(e);
+                                return reject(e);
+                            });
+                        }).catch(e => {
+                            console.error(e);
+                        });
+                    });
+                },
+                deltaLocationValue: function(name, delta) {
+                    let mR = globals.modules.roomLightsManager;
+                    return new Promise((resolve, reject) => {
+                        mR.methods.getLocationValue(name).then(value => {
+                            mR.methods.sendLocationCommand(name, Number(value)+delta).then(res => {
+                                console.log(JSON.stringify(res));
+                                return resolve(res);
+                            }).catch(e => {
+                                console.error(e);
+                                return reject(e);
+                            });
+                        }).catch(e => {
+                            console.error(e);
+                        });
+                    });
+                }
+            },
+            properties: {
+                locations: {},
+                devices: {},
+                locationsContainerID: "mainRoomLights-locationsContainer",
+                devicesContainerID: "mainRoomLights-devicesContainer"
             }
         },
         speechManager: {

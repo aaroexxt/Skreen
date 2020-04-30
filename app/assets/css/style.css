@@ -468,7 +468,6 @@ img.asep {
     background: rgba(200, 200, 200, 0.8);
     display: inline-block;
     cursor: pointer;
-    font-family: 'Helvetica Neue';
     transition: 0.1 !important;
 }
 .controlButton.playPause {
@@ -503,12 +502,4 @@ img.asep {
 .loadBar {
     width: 200px;
     height: 20px;
-}
-.mapWrapper img, .mapWrapper h1, .mapWrapper p, .mapWrapper span, {
-    position: fixed;
-    z-index: 1000;
-}
-.mapWrapper {
-    height: 100%;
-    margin: 0;
 }

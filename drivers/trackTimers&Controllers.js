@@ -136,10 +136,11 @@ const interactTimerModule = { //client interaction timer that prevents client in
     },
     canInteract: (resetAllowed) => {
         var _this = interactTimerModule;
+        let retInteract = JSON.parse(JSON.stringify(_this.canInteractWithTrack)); //make sure memory values don't copy
         if (resetAllowed && _this.canInteractWithTrack) { //flag to not reset timer when peeking at canInteract variable
             _this.reset();
         }
-        return _this.canInteractWithTrack;
+        return retInteract;
     }
 }
 

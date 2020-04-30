@@ -361,11 +361,10 @@ process.on('uncaughtException', function (err) { //on error
 	process.exit();
 });*/
 process.on('unhandledRejection', (reason, p) => {
-    console.error("Unhandled Promise Rejection at: Promise ");
+    console.error("Unhandled Promise Rejection at: Promise '"+p.name+"'");
     console.error(p);
-    console.error(p.name);
     console.error("Because reason: ", reason.stack || reason);
-    process.exit();
+    //process.exit();
 });
 
 
@@ -715,7 +714,7 @@ AUTHrouter.get('/passcode', (req, res, next) => {
 
 //API ROUTES
 APIrouter.use(function(req, res, next) { //Middleware to check whether the user is authenticated
-	console.log("API endpoint targeted; checking authentication...");
+	//console.log("API endpoint targeted; checking authentication...");
 	if(req.isAuthenticated() || runtimeSettings.disableLogin) {
 		next();
 	} else {
@@ -845,14 +844,6 @@ APIrouter.get("/speech/:data", function(req, res) {
 
 //Soundcloud Routes
 
-SCrouter.use(function(req, res, next) {
-	console.log("SC endpoint targeted; checking authentication...");
-	if(req.isAuthenticated() || runtimeSettings.disableLogin) {
-		next();
-	} else {
-		return res.end(401, RequestHandler.FAILURE("Error: Not authenticated for making API request to SCRouter"));
-	}
-});
 SCrouter.get("/clientReady", function(req, res) {
 	if (soundcloudSettings.soundcloudStatus.ready) {
         console.log("SCClientReady request recieved; sending data");
@@ -1147,6 +1138,14 @@ LIGHTSrouter.get("/locationName/:location/", function(req, res) {
 		return res.end(RequestHandler.FAILURE("Error getting location output value: "+e+"\n"));
 	})
 });
+
+LIGHTSrouter.get("/locationsList", function(req, res) {
+	return res.end(RequestHandler.SUCCESS(roomData.locations));
+});
+
+LIGHTSrouter.get("/devicesList", function(req, res) {
+	return res.end(RequestHandler.SUCCESS(roomData.devices));
+})
 
 
 //Catch anything that falls through and just send to client
