@@ -36,6 +36,7 @@ diskutil list || (echo "diskutil not supported :(. can't finish install" && exit
 echo "erasing disk $1. ARE YOU SURE";
 read
 
+echo "Now erasing";
 diskutil eraseDisk FAT32 RASPBIAN /dev/disk$1 || exit 1;
 echo "unmounting";
 diskutil unmountDisk /dev/disk$1 || exit 1;
@@ -44,9 +45,12 @@ echo "GOING TO TAKE A WHILE. IT IS DOING SOMETHING EVEN IF IT DOESN'T LOOK LIKE 
 sudo dd bs=1m if=raspbian.img of=/dev/rdisk$1 conv=sync
 echo "removing unneeded files";
 sudo rm -f raspbian.zip raspbian.img;
+echo "remounting";
+diskutil mountDisk /dev/disk$1 || exit 1;
 echo "enabling ssh";
 cd /Volumes/boot;
 sudo touch ssh
+echo "setting up wifi";
 sudo touch wpa_supplicant.conf;
 echo 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev' >> wpa_supplicant.conf;
 echo 'update_config=1' >> wpa_supplicant.conf;
