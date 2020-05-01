@@ -48,6 +48,9 @@ echo "enabling ssh";
 cd /Volumes/boot;
 sudo touch ssh
 sudo touch wpa_supplicant.conf;
+echo 'ctrl_interface=DIR=/var/run/wpa_supplicant GROUP=netdev' >> wpa_supplicant.conf;
+echo 'update_config=1' >> wpa_supplicant.conf;
+echo 'country=US' >> wpa_supplicant.conf;
 echo 'network={' >> wpa_supplicant.conf;
 echo '	ssid="BPWireless1"' >> wpa_supplicant.conf;
 echo '	psk=a9353d2e6556fdf61ee8ffe1af7ad8b5de0875fa03defe4155f28f0570ae91c8' >> wpa_supplicant.conf;

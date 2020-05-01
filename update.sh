@@ -25,11 +25,6 @@ do
         echo "Help: pass -a to automatically update files without y/n for each one."; exit 0;
         ;;
         esac
-    *)
-        echo "Hmm, an invalid option was received."
-        echo ""
-        ;;
-        esac
 done
 
 confirm() {
@@ -48,7 +43,7 @@ confirm() {
 update() {
     sudo rm -R "$cwd/tempSKREEN" || echo "No Skreen directory found; not deleting"
     echo "Downloading temporary Skreen directory...";
-    sudo git clone https://github.com/aaroexxt/Skreen.git tempSKREEN;
+    sudo git clone git://github.com/aaroexxt/Skreen.git tempSKREEN;
 
     IFS=$'\n'; set -f #set internal field seperator to fix spaces in filenames
     cd tempSKREEN;
