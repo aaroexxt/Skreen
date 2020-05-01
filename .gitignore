@@ -6,9 +6,6 @@ node_modules/*
 libpostal
 compile/*
 *.mp3
-data/SCcache/*
-data/SCcache/*.json
-data/neural/*
 *.DS_Store
 *DS_Store
 .DS_Store
@@ -21,4 +18,3 @@ Thumbs.db
 package-lock.json
 logs/*
 sessions/*
-data/mapping/*

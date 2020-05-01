@@ -34,6 +34,7 @@ sudo npm cache clean -f #update node
 sudo npm install -g n
 sudo n 10.15.0
 sudo npm install npm@latest -g
+PATH="$PATH" #make sure path variable is correct
 
 
 echo "Installing node-gyp";

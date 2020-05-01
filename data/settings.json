@@ -45,11 +45,11 @@
         "defaultUsername": "bexterdubs",
         "currentUser": "bexterdubs",
 
-        "soundcloudTrackCacheFile": "data/SCcache/soundcloudTrackCache",
-        "soundcloudUserdataCacheFile": "data/SCcache/soundcloudUserdataCache",
-        "soundcloudTrackCacheDirectory": "data/SCcache/tracks",
-        "soundcloudArtworkCacheDirectory": "data/SCcache/artwork",
-        "soundcloudWaveformCacheDirectory": "data/SCcache/waveform",
+        "soundcloudTrackCacheFile": "/data/SCcache/soundcloudTrackCache",
+        "soundcloudUserdataCacheFile": "/data/SCcache/soundcloudUserdataCache",
+        "soundcloudTrackCacheDirectory": "/data/SCcache/tracks",
+        "soundcloudArtworkCacheDirectory": "/data/SCcache/artwork",
+        "soundcloudWaveformCacheDirectory": "/data/SCcache/waveform",
         "noArtworkUrlPrefix": "/app/assets/",
 
         "soundcloudCacheExpiryTime": 604800000,
