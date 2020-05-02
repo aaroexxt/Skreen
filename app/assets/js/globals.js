@@ -283,6 +283,17 @@ const globals = {
                     volumeBar.animate(0);
                     mR.properties.volumeBar = volumeBar;
 
+                    var trackProgressBar = new ProgressBar.Line("#"+mR.properties.trackProgressBarElement, {
+                        strokeWidth: 5,
+                        duration: 500,
+                        color: '#FFEA82',
+                        trailColor: '#eee',
+                        trailWidth: 3,
+                        svgStyle: {width: '100%', height: '100%'}
+                    });
+                    trackProgressBar.animate(0);
+                    mR.properties.trackProgressBar = trackProgressBar;
+
                     clearInterval(mR.properties.trackDataUpdateTimeout); //in case user is being changed
                     new SRH.requestInterval(1000, "api/SC/clientReady", data => {
 
@@ -403,6 +414,18 @@ const globals = {
                                 document.getElementById(mR.properties.trackAuthorElement).innerHTML = "By: "+nTrack.author;
                             }
                         }
+
+                        if (JSON.stringify(mR.properties.trackTiming) != JSON.stringify(data.trackTiming)) {
+                            mR.properties.trackTiming = data.trackTiming;
+                            console.log("TimingChange");
+
+                            let timestamp = data.trackTiming.timeStamp || "TstampErr";
+                            let duration = data.trackTiming.duration || "DurErr";
+                            document.getElementById(mR.properties.trackTimestampElement).innerHTML = timestamp+" / "+duration;
+
+                            let percent = Number(data.trackTiming.percent/100) || -1;
+                            mR.properties.trackProgressBar.animate(percent);
+                        }
                     }).catch( err => {
                         console.error("Error getting sound update: "+err);
                     });
@@ -481,10 +504,12 @@ const globals = {
                 loopButtonElement: "music_loopButton",
                 trackTitleElement: "music_trackTitle",
                 trackArtElement: "music_trackArt",
+                trackTimestampElement: "music_trackTimestamp",
                 waveformArtElement: "music_waveformArt",
                 trackListElement: "music_trackList",
                 trackAuthorElement: "music_trackAuthor",
                 volumeBarElement: "music_bottomVolumeBar",
+                trackProgressBarElement: "music_trackProgressBar",
                 backButtonElement: "music_backButton",
                 forwardButtonElement: "music_forwardButton",
                 playPauseButtonElement: "music_playPauseButton",

@@ -22,8 +22,9 @@ sudo apt-get install -y libx11-dev;
 sudo apt-get install -y libpng-dev;
 sudo apt-get install -y libopenblas-dev;
 sudo apt-get install -y libopenal-dev;
+sudo apt-get install -y libxext-dev;
 sudo apt install -y libavahi-compat-libdnssd-dev;
-sudo apt-get install -y build-essential libxi-dev libglu1-mesa-dev libglew-dev pkg-config
+sudo apt-get install -y build-essential libxi-dev libglu1-mesa-dev libglew-dev pkg-config;
 
 echo "Setting up system library links...";
 sudo ldconfig;
@@ -46,5 +47,10 @@ sudo npm install --unsafe-perm=true --allow-root --build-from-source --save-prod
 sudo npm install --unsafe-perm=true --allow-root --save-prod speaker;
 sudo npm install --unsafe-perm=true --allow-root --save-prod mp3-duration pcm-volume lame window-size single-line-log colors strip-color brain.js timed-stream node-fetch progress-stream remote-file-size express express-session session-file-store serve-favicon body-parser cors passport passport-local passport-custom bcrypt node-json-db gpu.js
 
+echo "setting system volume";
+#for internal rpi sound card
+amixer set 'PCM' 100%
+#for external sound card
+#amixer set 'Speaker' 100%
 echo "Done installing packages";
 

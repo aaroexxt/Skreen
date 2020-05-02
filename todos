@@ -1,0 +1,9 @@
+Todos:
+
+- make logos bigger on main client file
+- make login path for phone
+- make random http request attempt redirect to main client file
+- add a switch for timer on/off
+- make the settings page on main client file have something or remove it
+- fix login attempt tracking
+- % played bar for tracks

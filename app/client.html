@@ -92,15 +92,17 @@
 				</div>
 			</div>
 			<div id="mainMusic" class="fullScreen" style="display: none">
-				<img width="23.5%" height="45%px" style="float: left; margin-left: 1%; margin-top: 1%; border: 2px groove grey;" id="music_trackArt"></img> <!--always 500px by 500px-->
+				<img width="23.5%" height="45%" style="float: left; margin-left: 1%; margin-top: 1%; border: 2px groove grey;" id="music_trackArt"></img> <!--always 500px by 500px-->
 				<div style="float: left; margin-left: 1%; margin-top: 1%; width: 74%;">
 					<center>
 						<h1 id="music_trackTitle" class="shadow">Tracks loading...</h1>
 						<h3 id="music_trackAuthor" style="margin-left: 10%;"></h3>
+						<h4 id="music_trackTimestamp" style="margin-left: 20%;"></h4>
 					</center>
 				</div>
 				<img width="74%" height="10%" style="float: left; margin-left: 1%" id="music_waveformArt"></img> <!--always 1800px by 280px-->
-				<canvas width="74%" height="10%" style="float: left; margin-left: 1%" id="music_waveformArtCanvas"></canvas>
+				<canvas width="74%" height="10%" style="float: left; margin-left: 1%;" id="music_waveformArtCanvas"></canvas>
+				<div id="music_trackProgressBar" style="float: left; margin-left: 1%; margin-top: 1%; height: 20px; width: 74% !important;"></div>
 				<div id="music_trackList" style="width: 99%; margin-left: 1%; height: 30%; overflow: scroll; overflow-x: hidden;">
 				</div>
 			</div>

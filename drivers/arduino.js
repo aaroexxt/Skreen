@@ -155,7 +155,7 @@ var arduinoUtilities = {
                             console.error("[ARDUINO] HandleArduinoData failed with message: "+e);
                         }); //pass reference
                     });
-                    resolve();
+                    return resolve();
                 }
             })
         });
