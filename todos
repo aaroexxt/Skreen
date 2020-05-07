@@ -7,3 +7,12 @@ Todos:
 - make the settings page on main client file have something or remove it
 - fix login attempt tracking
 - % played bar for tracks
+- redo sound backend with https://github.com/andrewrk/node-groove orrr https://github.com/Richienb/audic/blob/master/src/index.ts
+- fix bug where multiple music timers can be going at once? or smth like that
+- speech commands!! annyang?
+- proper NPM start command
+- forever support so it doesnt die even if error
+- store local settings so server resume is smooth
+- "server terminate" button in case things are bad (will interrupt playback)
+- AIRPLAY VOLUME CHANGING
+- AIRPLAY TRACK METADATA INCORPORATION

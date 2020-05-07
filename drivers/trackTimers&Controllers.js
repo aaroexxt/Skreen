@@ -180,7 +180,7 @@ const trackControl = { //module which controls the speaker and can output&decode
         volumeAdjust: new pcmVolume(), //initialize pcm volume changer
         decoder: new lame.Decoder(this.defaultAudioOptions), //initialize decoder
         timedInputStream: new timedStream({ //initialize timedStream
-            rate: 1000000,
+            rate: 12800,
             period: 100
         }),
         speaker: undefined
@@ -219,7 +219,7 @@ const trackControl = { //module which controls the speaker and can output&decode
                 _this.pipeline.readStream = readable;
 
                 _this.pipeline.timedInputStream = new timedStream({
-                    rate: 1000000,
+                    rate: 12800,
                     period: 100
                 }); //initialize timedStream
                 

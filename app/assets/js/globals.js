@@ -408,10 +408,30 @@ const globals = {
                             var nTrack = data.currentPlayingTrack;
                             if (nTrack) {
                                 mR.properties.currentPlayingTrack = nTrack;
-                                document.getElementById(mR.properties.trackArtElement).src = (!nTrack.artwork.artworkUrl) ? mR.properties.noArtworkUrl : "http://"+window.location.host+"/api/sc/trackArt/"+nTrack.id+".jpg";//track.artwork.artworkUrl;
-                                document.getElementById(mR.properties.waveformArtElement).src = "http://"+window.location.host+"/api/sc/trackWaveform/"+nTrack.id+".png";
-                                document.getElementById(mR.properties.trackTitleElement).innerHTML = nTrack.title;
-                                document.getElementById(mR.properties.trackAuthorElement).innerHTML = "By: "+nTrack.author;
+                                if (typeof nTrack.artwork != "undefined") {
+                                    document.getElementById(mR.properties.trackArtElement).src = (!nTrack.artwork.artworkUrl) ? mR.properties.noArtworkUrl : "http://"+window.location.host+"/api/sc/trackArt/"+nTrack.id+".jpg";//track.artwork.artworkUrl;
+                                } else {
+                                    document.getElementById(mR.properties.trackArtElement).src = mR.properties.noArtworkUrl;
+                                }
+
+                                if (typeof nTrack.id != "undefined") {
+                                    document.getElementById(mR.properties.waveformArtElement).src = "http://"+window.location.host+"/api/sc/trackWaveform/"+nTrack.id+".png";
+                                }
+
+                                if (typeof nTrack.title != "undefined") {
+                                    document.getElementById(mR.properties.trackTitleElement).innerHTML = nTrack.title;
+                                } else {
+                                    console.warn("nTrack missing title property; has a valid track been recieved from the server?");
+                                    document.getElementById(mR.properties.trackTitleElement).innerHTML = "Unknown";
+                                }
+
+                                if (typeof nTrack.author != "undefined") {
+                                     document.getElementById(mR.properties.trackAuthorElement).innerHTML = "By: "+nTrack.author;
+                                } else {
+                                    console.warn("nTrack missing author peroperty; has a valid track been recieved from the server?");
+                                    document.getElementById(mR.properties.trackAuthorElement).innerHTML = "By: Unknown";
+                                }
+                                
                             }
                         }
 
@@ -436,7 +456,7 @@ const globals = {
                     clearInterval(mR.properties.trackDataUpdateTimeout);
                     mR.properties.trackDataUpdateTimeout = setTimeout( () => {
                         mR.state = "trackDataUpdate";
-                    }, 1000);
+                    }, 200);
                 },
                 changeSoundcloudUser: function() {
                     let mR = globals.modules.music;

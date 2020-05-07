@@ -49,7 +49,8 @@ const SoundManagerV2 = {
     playingTrack: false, //boolean whether track is playing or not
     wasPlayingTrackBeforeAirplay: false, //boolean whether track was playing before airplay took over
     playingAirplay: false, //boolean whether airplay is playing
-    currentPlayingTrack: {}, //current playing track in object form
+    currentPlayingLocalTrack: {}, //current playing track in object form
+    currentPlayingAirplayTrack: {},
 
     //Addtl Modules
     trackTimer: trackTimerModule,
@@ -92,7 +93,7 @@ const SoundManagerV2 = {
                         console.log("Track duration in seconds long: "+duration);
                     }
 
-                    _this.currentPlayingTrack = trackObject;
+                    _this.currentPlayingLocalTrack = trackObject;
                     _this.playingTrack = true;
 
                     _this.trackTimer.reset(duration); //reset trackTimer
@@ -169,7 +170,7 @@ const SoundManagerV2 = {
             soundcloudSettings.soundcloudStatus = {ready: false, error: false, message: ""};
              _this.initUsername(username).then( () => {
 
-                _this.currentPlayingTrack = soundcloud.localSoundcloudSettings.likedTracks[0]; //start with first track
+                _this.currentPlayingLocalTrack = soundcloud.localSoundcloudSettings.likedTracks[0]; //start with first track
                 _this.currentVolume = soundcloud.localSoundcloudSettings.defaultVolume;
 
                 var step6 = () => {
@@ -209,6 +210,8 @@ const SoundManagerV2 = {
             //STEP 5
                             airplay.onClientConnected(_this.airplayClientConnected);
                             airplay.onClientDisconnected(_this.airplayClientDisconnected);
+                            airplay.onClientVolumeChange(_this.airplayClientVolumeChange);
+                            airplay.onClientMetadataChange(_this.airplayClientMetadataChange);
 
                 //STEP 6
                             step6();
@@ -220,7 +223,7 @@ const SoundManagerV2 = {
                 }
             }).catch(errorReject);
 
-        })
+        });
     },
 
     initUsername: function(username) {
@@ -318,6 +321,33 @@ const SoundManagerV2 = {
         }
     },
 
+    airplayClientVolumeChange: function(newVolume) {
+        if (typeof newVolume != "number" || isNaN(newVolume)) {
+            console.warn("airplay cli volumechange newVol not valid number; not changing");
+            return;
+        }
+
+        var _this = SoundManagerV2;
+
+        _this.trackAudioController.currentVolume = newVolume;
+        _this.trackAudioController.setVolume(newVolume);
+        _this.airplayPipeline.volumeTweak.setVolume(nMap(newVolume, 0, 100, _this.pcm_MINVOLUME, _this.pcm_MAXVOLUME));
+    },
+
+    airplayClientMetadataChange: function(meta) {
+        if (typeof meta == "undefined") {
+            console.warn("airplay cli metachange meta undefined");
+            return;
+        }
+
+        var _this = SoundManagerV2;
+
+        _this.currentPlayingAirplayTrack = {
+            title: meta.trackTitle,
+            author: meta.artist
+        }
+    },
+
     getSoundcloudObject: function() { //shim to access soundcloud
         return soundcloud;
     },
@@ -334,7 +364,7 @@ const SoundManagerV2 = {
 
         return new Promise( (resolve, reject) => {
             if (ev && ev.type) {
-                if (_this.debugMode || true) {
+                if (_this.debugMode) {
                     console.log("[SoundManager] ClientEvent: "+ev.type+", origin: "+((ev.origin) ? ev.origin : "unknown (external)")+", dat: "+JSON.stringify((ev.data) ? ev.data : "no data provided"));
                 }
                 try { //attempt change to JSON data format
@@ -383,12 +413,12 @@ const SoundManagerV2 = {
                                 if (_this.debugMode) {
                                     console.info("Track looping");
                                 }
-                                _this.trackController.play(soundcloud.localSoundcloudSettings.likedTracks[_this.currentPlayingTrack.index], true); //replay
+                                _this.trackController.play(soundcloud.localSoundcloudSettings.likedTracks[_this.currentPlayingLocalTrack.index], true); //replay
                             } else {
 
                                 if (soundcloud.localSoundcloudSettings.nextTrackShuffle) { //alright the client wants to shuffle the track, so let's do that
                                     var ind = Math.round(Math.random()*tracksLength);
-                                    if (ind == _this.currentPlayingTrack.index) { //is track so add one
+                                    if (ind == _this.currentPlayingLocalTrack.index) { //is track so add one
                                         ind++;
                                         if (ind >= tracksLength) { //lol very random chance that it wrapped over
                                             ind = 0;
@@ -396,7 +426,7 @@ const SoundManagerV2 = {
                                     }
                                     _this.trackController.play(soundcloud.localSoundcloudSettings.likedTracks[ind], internalForward);
                                 } else { //straight up go forward a track
-                                    var ind = _this.currentPlayingTrack.index+1;
+                                    var ind = _this.currentPlayingLocalTrack.index+1;
                                     if (ind > tracksLength) {
                                         ind = 0; //go to first track
                                     }
@@ -406,7 +436,7 @@ const SoundManagerV2 = {
                             }
                             break;
                         case "trackBackward":
-                            var ind = _this.currentPlayingTrack.index-1;
+                            var ind = _this.currentPlayingLocalTrack.index-1;
                             if (ind < 0) {
                                 ind = tracksLength-1; //go to last track
                             }

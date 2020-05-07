@@ -891,7 +891,7 @@ SCrouter.get("/clientUpdate", function(req, res) {
 
         var internalSCSettings = soundManager.getSoundcloudObject().localSoundcloudSettings; //used to access internal SC settings that are not kept by SoundManager but rather by the soundcloud module itself. mostly a polyfill from the old days when there was only soundcloud.js
         res.end(RequestHandler.SUCCESS({
-            currentPlayingTrack: soundManager.currentPlayingTrack || {},
+            currentPlayingTrack: (soundManager.playingAirplay) ? soundManager.currentPlayingAirplayTrack : soundManager.currentPlayingLocalTrack,
             trackTiming: {
             	percent: soundManager.trackTimer.getPlayedPercent(),
             	duration: formatHHMMSS(soundManager.trackTimer.getTrackDuration()),

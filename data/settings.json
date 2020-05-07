@@ -93,7 +93,7 @@
         }
     },
     "airplaySettings": {
-        "serverName": "SkreenBETA",
+        "serverName": "SkreenV0.2",
         "enabled": true
     },
     "lutronSettings": {
