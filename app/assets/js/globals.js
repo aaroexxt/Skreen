@@ -90,8 +90,7 @@ const globals = {
                             //change state
                             moduleReference.state = "initializeLoadListener";
                         });
-                    })
-                    .catch(error => {
+                    }).catch(error => {
                         console.error("Server is not up. Cannot continue with initialization (e="+error+")");
                     })
                 },
@@ -225,7 +224,7 @@ const globals = {
                 imageWidth: 16,
                 imageHeight: 16,
                 loadBarElementName: "main_loadBar",
-                loadListenerWaitTime: 1000,
+                loadListenerWaitTime: 200,
                 mainElementName: "main",
                 loadContainerElementName: "loading",
                 loadElementClass: "loader",
@@ -297,7 +296,7 @@ const globals = {
                     clearInterval(mR.properties.trackDataUpdateTimeout); //in case user is being changed
                     new SRH.requestInterval(1000, "api/SC/clientReady", data => {
 
-                        if (data && data.hasTracks && data.likedTracks.length > 0 && data.trackList.length > 0) { //is the data valid?
+                        if (typeof data != "undefined" && data.hasTracks && data.likedTracks.length > 0 && data.trackList.length > 0) { //is the data valid?
                             mR.properties.likedTracks = data.likedTracks;
                             mR.properties.trackList = data.trackList;
 
@@ -505,16 +504,10 @@ const globals = {
                         document.getElementById(mR.properties.trackAuthorElement).innerHTML = "By: "+track.author;
                     })
                     .catch(error => {
-                        console.error("Couldn't play track: "+error);
+                        console.error("Couldn't play track: ",error);
                         document.getElementById(mR.properties.trackTitleElement).innerHTML = "";
                         document.getElementById(mR.properties.trackAuthorElement).innerHTML = "Failed to play track because: "+((error.error)?(error.message):error);
                     })
-
-                    /*for local lel
-                    try{
-                        globals.music.soundManager.playerObject.pause();
-                    } catch(e){}
-                    */
                 }
                 
             },
@@ -1395,7 +1388,7 @@ const globals = {
                     moduleReference.state = "initHUD";
                 },
                 initStats: function(moduleReference) {
-                    if (!Chart || !RadialGauge || !LinearGauge) {
+                    if (typeof Chart == "undefined" || typeof RadialGauge == "undefined" || typeof LinearGauge == "undefined") {
                         console.error("Is Chart.js and Gauges.js installed? Missing some libs");
                         return;
                     }

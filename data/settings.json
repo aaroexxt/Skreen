@@ -42,8 +42,8 @@
     },
     "soundcloudSettings": {
         "clientID": "3425f0db5f4339b4edbef6afeeb23264",
-        "defaultUsername": "bexterdubs",
-        "currentUser": "bexterdubs",
+        "defaultUsername": "aaroexxt",
+        "currentUser": "aaroexxt",
 
         "soundcloudTrackCacheFile": "/data/SCcache/soundcloudTrackCache",
         "soundcloudUserdataCacheFile": "/data/SCcache/soundcloudUserdataCache",
@@ -59,18 +59,18 @@
         "tracksToLoad": -1,
 
         "noArtworkUrl": "/images/noAlbumArt.png",
-        "defaultVolume": 100,
+        "defaultVolume": 50,
         "currentVolume": 50,
         "autoplayTrack": true,
         "volStep": 10,
         "maxLikedTracks": 0,
-        "maxTracksInRequest": 200,
-        "tracksPerRequest": 40,
-        "requestConstraint": 10,
+        "maxTracksInRequest": 8000,
+        "tracksPerRequest": 50,
+        "requestConstraint": 160,
         "trackUpdateInterval": 0,
         "nextTrackShuffle": false,
         "nextTrackLoop": false,
-        "userID": 0,
+        "userID": -1,
         "firstPlay": true,
 
         "tracksFromCache": false,
@@ -80,7 +80,9 @@
 
         "requestTimeout": 21000,
         "soundcloudStatus": {"ready": false, "error": false, "message": ""},
-        "minInteractionWaitTime": 3000
+        "minInteractionWaitTime": 1000,
+
+        "allowTrackBackSeconds": 3
     },
     "neuralSettings": {
         "dataBasePath": "data/neural",

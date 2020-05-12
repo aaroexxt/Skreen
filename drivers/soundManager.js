@@ -76,7 +76,6 @@ const SoundManagerV2 = {
             }
             console.log(internalOrigin)
             if (_this.playingTrack && !internalOrigin) {
-                console.log("pausing")
                 _this.trackController.pause();
             }
 
@@ -132,10 +131,10 @@ const SoundManagerV2 = {
         return new Promise( (resolve, reject) => {
             var _this = SoundManagerV2;
 
-            if (!soundcloudSettings || !cwd || !airplaySettings) {
+            if (typeof soundcloudSettings == "undefined" || typeof cwd == "undefined" || typeof airplaySettings == "undefined") {
                 return reject("SoundcloudSettings or AirplaySettings or cwd undefined on SCSoundManagerV2 init");
             }
-            if (!username) {
+            if (typeof username == "undefined") {
                 username = soundcloudSettings.defaultUsername;
             }
             if (airplaySettings.enabled) {
@@ -227,41 +226,43 @@ const SoundManagerV2 = {
     },
 
     initUsername: function(username) {
+        var _this = SoundManagerV2;
+        _this.soundcloudSettings.soundcloudStatus = {ready: false, error: false, message: ""};
         return new Promise((mresolve, mreject) => {
-            var _this = SoundManagerV2;
-                if (typeof username == "undefined") {
-                    username = _this.soundcloudSettings.defaultUsername;
-                }
-                var timesLeft = _this.soundcloudSettings.initMaxAttempts;
+            if (typeof username == "undefined") {
+                username = _this.soundcloudSettings.defaultUsername;
+            }
+            var timesLeft = _this.soundcloudSettings.initMaxAttempts;
 
-                function initSCSlave() {
-                    if (_this.debugMode) {
-                        console.info("Starting SC SLAVE (att "+(_this.soundcloudSettings.initMaxAttempts-timesLeft+1)+"/"+_this.soundcloudSettings.initMaxAttempts+")");
+            function initSCSlave() {
+                if (_this.debugMode) {
+                    console.info("Starting SC SLAVE (att "+(_this.soundcloudSettings.initMaxAttempts-timesLeft+1)+"/"+_this.soundcloudSettings.initMaxAttempts+")");
+                }
+                soundcloud.init({
+                    soundcloudSettings: _this.soundcloudSettings,
+                    username: username,
+                    cwd: _this.cwd
+                }).then( () => {
+                    console.log(colors.green("Initialized Soundcloud successfully!"));
+                    _this.soundcloudSettings.soundcloudStatus = {ready: true, error: false, message: ""};
+                    return mresolve();
+                }).catch( err => {
+                    timesLeft--;
+                    firstRun = true;
+                    if (timesLeft > 0) {
+                        console.error("[SCMASTER] Error initializing soundcloud ("+err+"). Trying again in "+_this.soundcloudSettings.initErrorDelay+" ms.");
+                        setTimeout( () => {
+                            initSCSlave();
+                        }, _this.soundcloudSettings.initErrorDelay);
+                    } else {
+                        console.error("[SCMASTER] Reached maximum tries for attempting soundcloud initialization. Giving up. (Err: "+err+")");
+                        _this.soundcloudSettings.soundcloudStatus = {ready: false, error: true, message: "[SCMASTER] Reached maximum tries for attempting soundcloud initialization. Giving up. (Err: "+err+")"};
+                        return mreject("MaxTries reached (giving up) with error message: "+err);
                     }
-                    soundcloud.init({
-                        soundcloudSettings: _this.soundcloudSettings,
-                        username: username,
-                        cwd: _this.cwd
-                    }).then( () => {
-                        console.log(colors.green("Initialized Soundcloud successfully!"));
-                        
-                        return mresolve();
-                    }).catch( err => {
-                        timesLeft--;
-                        firstRun = true;
-                        if (timesLeft > 0) {
-                            console.error("[SCMASTER] Error initializing soundcloud ("+err+"). Trying again in "+_this.soundcloudSettings.initErrorDelay+" ms.");
-                            setTimeout( () => {
-                                initSCSlave();
-                            }, _this.soundcloudSettings.initErrorDelay);
-                        } else {
-                            console.error("[SCMASTER] Reached maximum tries for attempting soundcloud initialization. Giving up. (Err: "+err+")");
-                            mreject("MaxTries reached (giving up) with error message: "+err);
-                        }
-                    });
-                }
+                });
+            }
 
-                initSCSlave(); //begin first slave
+            initSCSlave(); //begin first slave
         })
     },
 
@@ -382,7 +383,7 @@ const SoundManagerV2 = {
                 let canInteract = _this.interactTimer.canInteract(!overrideInteractPresent); //fetch canInteract, which will reset timer if override is false
 
 
-                if (canInteract || overrideInteractPresent) {
+                if ((canInteract && !_this.playingAirplay) || overrideInteractPresent) { //Make sure we're not playing airplay, so request should reject
 
                     switch (ev.type) {
                         case "playPause":
@@ -436,9 +437,12 @@ const SoundManagerV2 = {
                             }
                             break;
                         case "trackBackward":
-                            var ind = _this.currentPlayingLocalTrack.index-1;
-                            if (ind < 0) {
-                                ind = tracksLength-1; //go to last track
+                            var ind = _this.currentPlayingLocalTrack.index;
+                            if (trackTimerModule.getPlayedSeconds() < _this.soundcloudSettings.allowTrackBackSeconds) {
+                                ind--;
+                                if (ind < 0) {
+                                    ind = tracksLength-1; //go to last track
+                                }
                             }
                             _this.trackController.play(soundcloud.localSoundcloudSettings.likedTracks[ind]);
                             break;
@@ -472,7 +476,7 @@ const SoundManagerV2 = {
                     }
                     return resolve();
                 } else {
-                    return reject("SoundManager cannot process event because the minimum time between events has not elapsed")
+                    return reject((_this.playingAirplay)?"SoundManager cannot process event because it's currently in AirPlay mode":"SoundManager cannot process event because the minimum time between events has not elapsed");
                 }
             } else {
                 return reject("SoundManager proc cliEv called with no event or invalid");

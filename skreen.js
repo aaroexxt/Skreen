@@ -375,7 +375,7 @@ var soundManager = require('./drivers/soundManager.js');
 
 
 console.info("Starting SC MASTER");
-soundManager.init(soundcloudSettings, airplaySettings, cwd).then( () => {
+soundManager.init(soundcloudSettings, airplaySettings, cwd).then( () => { //no username param so that username is not passed
 	console.importantInfo("SM INIT OK");
 }).catch( err => {
 	console.error("Error initializing SC: "+err);
@@ -846,7 +846,7 @@ APIrouter.get("/speech/:data", function(req, res) {
 
 SCrouter.get("/clientReady", function(req, res) {
 	if (soundcloudSettings.soundcloudStatus.ready) {
-        console.log("SCClientReady request recieved; sending data");
+        //console.log("SCClientReady request recieved; sending data");
         res.end(RequestHandler.SUCCESS({
             hasTracks: true,
             likedTracks: soundcloudSettings.likedTracks,
@@ -971,12 +971,12 @@ SCrouter.get("/changeUser/:user", function(req, res) {
 	    console.info("Restarting SC MASTER with new user "+req.params.user);
 	    if (!gettingSCUser) {
 	    	gettingSCUser = true;
-	        initSoundcloud(req.params.user).then( () => {
-	            console.importantInfo("SC INIT OK");
+	        soundManager.initUsername(req.params.user).then( () => {
+	            console.importantInfo("SC REINIT OK");
 	            gettingSCUser = false;
 	            res.end(RequestHandler.SUCCESS());
 	        }).catch( err => {
-	            console.error("Error initializing SC: "+err);
+	            console.error("Error reinitializing SC: "+err);
 	            gettingSCUser = false;
 	            res.end(RequestHandler.FAILURE(err));
 	        });

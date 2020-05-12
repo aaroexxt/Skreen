@@ -12,6 +12,7 @@ const fetch = require('node-fetch');
 const remoteFileSize = require("remote-file-size");
 const path = require('path');
 const fs = require('fs');
+const colors = require('colors');
 
 var SCUtils = {
     localSoundcloudSettings: undefined,
@@ -197,7 +198,11 @@ var SCUtils = {
                 return resolve();
             }
             for (var j=0; j<requiredRequestTimes; j++) {
-                fetch("https://api.soundcloud.com/users/"+scSettings.userID+"/favorites.json?client_id="+scSettings.clientID+"&offset="+(scSettings.tracksPerRequest*j)+"&limit="+scSettings.tracksPerRequest+"&format=json", {timeout: scSettings.requestTimeout}).then( res => res.json()).then( tracks => { //get favorite tracks
+                let reqURL = "https://api.soundcloud.com/users/"+scSettings.userID+"/favorites.json?client_id="+scSettings.clientID+"&offset="+(scSettings.tracksPerRequest*j)+"&limit="+scSettings.tracksPerRequest+"&format=json&_status_code_map[302]=200";
+                if (SCUtils.debugMode) {
+                    console.log("Making SC request for favorited tracks from: "+reqURL);
+                }
+                fetch(reqURL, {timeout: scSettings.requestTimeout}).then( res => res.json()).then( tracks => { //get favorite tracks
                     for (var i=0; i<tracks.length; i++) {
                         scSettings.likedTracks.push({ //extract track info
                             title: tracks[i].title,
@@ -215,7 +220,16 @@ var SCUtils = {
                     }
 
                     requestCounter++; //increment the counter
-                    //console.log("REQUEST_COUNTER: "+requestCounter+", likedtracks ",scSettings.likedTracks);
+                    if (SCUtils.debugMode) {
+                        console.log("---- Single SCRequest End ----");
+                        console.log("REQ_COUNT: "+requestCounter+" / "+requiredRequestTimes);
+                        console.log("TRACKS_TO_LOAD: "+scSettings.trackList.length+" / "+tracksToLoad);
+                        /*console.log("LIKEDTRACKS: ");
+                        for (let i=0; i<scSettings.likedTracks.length; i++) {
+                            console.log("\tTitle: "+scSettings.likedTracks[i].title);
+                        }*/
+                        console.log("----------");
+                    }
                     
                     if (scSettings.trackList.length >= tracksToLoad || requestCounter >= requiredRequestTimes) { //does loaded tracklist length equal tracks to load (equates for partial requests)
                         scSettings.tracksToLoad = scSettings.trackList.length; //didn't load all so change len

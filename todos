@@ -5,14 +5,25 @@ Todos:
 - make random http request attempt redirect to main client file
 - add a switch for timer on/off
 - make the settings page on main client file have something or remove it
+	- what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - fix login attempt tracking
 - % played bar for tracks
 - redo sound backend with https://github.com/andrewrk/node-groove orrr https://github.com/Richienb/audic/blob/master/src/index.ts
 - fix bug where multiple music timers can be going at once? or smth like that
-- speech commands!! annyang?
-- proper NPM start command
-- forever support so it doesnt die even if error
+- speech commands!! annyang? (replace Temp?F on client)
+- proper NPM start command that starts forever
 - store local settings so server resume is smooth
 - "server terminate" button in case things are bad (will interrupt playback)
+- client check isup periodically and if it's down prompt dialogue
+- Can type passcode with number keys + enter
+- track length of airplay track broadcast to client
+- volSet path
+
+done:
+
 - AIRPLAY VOLUME CHANGING
 - AIRPLAY TRACK METADATA INCORPORATION
+- forever support so it doesnt die even if error
+- if u click back and you're less than 3s into the song, go back to prev track, otherwise go to beginning
+- fix soundcloud change user
+- if playing airplay clientEvents should cancel in soundManager
