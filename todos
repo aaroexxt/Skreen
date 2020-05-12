@@ -18,6 +18,7 @@ Todos:
 - Can type passcode with number keys + enter
 - track length of airplay track broadcast to client
 - volSet path
+- rpi status page with like cpu temp and memory usage
 
 done:
 
