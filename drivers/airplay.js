@@ -101,24 +101,12 @@ const airplayUtils = {
 					return (typeof prop != "undefined");
 				}
 
-				if (notUndefined(meta.asal)) {
-					_this.state.album = meta.asal;
-				}
-				if (notUndefined(meta.asar)) {
-					_this.state.artist = meta.asar;
-				}
-				if (notUndefined(meta.ascp)) {
-					_this.state.producers = meta.ascp;
-				}
-				if (notUndefined(meta.asgn)) {
-					_this.state.genre = meta.asgn;
-				}
-				if (notUndefined(meta.minm)) {
-					_this.state.trackTitle = meta.minm;
-				}
-				if (notUndefined(meta.astm)) { //in ms
-					_this.state.duration = meta.astm;
-				}
+				_this.state.album = notUndefined(meta.asal) ? meta.asal : "Unknown";
+				_this.state.artist = notUndefined(meta.asar) ? meta.asar : "Unknown";
+				_this.state.producers = notUndefined(meta.ascp) ? meta.ascp : "Unknown";
+				_this.state.genre = notUndefined(meta.asgn) ? meta.asgn : "Unknown";
+				_this.state.trackTitle = notUndefined(meta.minm) ? meta.minm : "Unknown";
+				_this.state.duration = notUndefined(meta.astm) ? meta.astm : -1;
 
 				if (_this.debugMode) {
 					console.log("[AIRPLAY] track metadata change (parsed):",_this.state);

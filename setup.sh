@@ -38,11 +38,11 @@ sudo npm install npm@latest -g
 PATH="$PATH" #make sure path variable is correct
 
 
-echo "Installing node-gyp";
+#echo "Installing node-gyp";
 #sudo npm install -g node-gyp;
 
 echo "Installing all important packages from npm";
-sudo npm install --unsafe-perm=true --allow-root --save-prod git://github.com/Kolky/nodetunes.git#master
+sudo npm install --unsafe-perm=true --allow-root --save-prod git://github.com/stephen/nodetunes.git#master
 sudo npm install --unsafe-perm=true --allow-root --build-from-source --save-prod serialport;
 sudo npm install --unsafe-perm=true --allow-root --save-prod speaker;
 sudo npm install --unsafe-perm=true --allow-root --save-prod mp3-duration pcm-volume lame window-size single-line-log colors strip-color brain.js timed-stream node-fetch progress-stream remote-file-size express express-session session-file-store serve-favicon body-parser cors passport passport-local passport-custom bcrypt node-json-db gpu.js

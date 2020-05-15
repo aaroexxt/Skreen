@@ -42,7 +42,8 @@ const trackTimerModule = { //module that times track and counts how long it's be
         _this.currentPlayingTrackDuration = trackLength;
         _this.playingTrack = true;
 
-
+        //First ensure there's no existing listeners
+        clearInterval(_this.trackTimeInterval);
         _this.trackTimeInterval = setInterval( () => {
             trackTimerModule.currentPlayingTrackPlayed+=0.1;
         },100);
@@ -59,6 +60,7 @@ const trackTimerModule = { //module that times track and counts how long it's be
     pause: () => {
         var _this = trackTimerModule;
 
+        //We're pausing, clear all intervals and timeouts
         _this.playingTrack = false;
         clearInterval(_this.trackTimeInterval);
         clearTimeout(_this.trackEndTimeout);
@@ -72,6 +74,8 @@ const trackTimerModule = { //module that times track and counts how long it's be
             return _this.eventEmitter; //track has already ended, no need to do anything
         }
 
+        //First ensure there's no existing listeners
+        clearInterval(_this.trackTimeInterval);
         _this.trackTimeInterval = setInterval( () => {
             trackTimerModule.currentPlayingTrackPlayed+=0.1;
         },100);

@@ -9,16 +9,20 @@ Todos:
 - fix login attempt tracking
 - % played bar for tracks
 - redo sound backend with https://github.com/andrewrk/node-groove orrr https://github.com/Richienb/audic/blob/master/src/index.ts
-- fix bug where multiple music timers can be going at once? or smth like that
 - speech commands!! annyang? (replace Temp?F on client)
-- proper NPM start command that starts forever
 - store local settings so server resume is smooth
 - "server terminate" button in case things are bad (will interrupt playback)
 - client check isup periodically and if it's down prompt dialogue
+- switch to Express REST api mode (see https://blog.feathersjs.com/http-vs-websockets-a-performance-comparison-da2533f13a77)
+- split routes into their own file (https://www.robinwieruch.de/node-express-server-rest-api at bottom) and make initialization in seperate files as well
+- fadeout effect on menu change client side
 - Can type passcode with number keys + enter
 - track length of airplay track broadcast to client
 - volSet path
-- rpi status page with like cpu temp and memory usage
+- display current volume/freq on scale main client page
+- make lights update every 60000ms
+- rpi status page with like cpu temp and memory usage https://github.com/odensc/pi-temperature/blob/master/index.js
+- instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
 
 done:
 
@@ -28,3 +32,8 @@ done:
 - if u click back and you're less than 3s into the song, go back to prev track, otherwise go to beginning
 - fix soundcloud change user
 - if playing airplay clientEvents should cancel in soundManager
+- proper NPM start command that starts forever (and stop + clean command too)
+
+what I think is done but needs to be bugtested:
+
+- fix bug where multiple music timers can be going at once? or smth like that (seems to happen on fast play/pause)

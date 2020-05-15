@@ -7,7 +7,9 @@
     "test": "test"
   },
   "scripts": {
-    "test": "sudo node skreen.js"
+    "start": "sudo forever start --fifo -a --uid skreen skreen.js",
+    "stop": "sudo forever stop skreen",
+    "clean": "read -r -p 'you sure you want to clear all logs? otherwise exit now' && forever cleanlogs && sudo forever cleanlogs"
   },
   "repository": {
     "type": "git",
@@ -16,6 +18,7 @@
   "keywords": [
     "nodejs",
     "arduino",
+    "raspberrypi",
     "automation",
     "home"
   ],
