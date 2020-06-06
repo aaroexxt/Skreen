@@ -7,7 +7,6 @@ Todos:
 - make the settings page on main client file have something or remove it
 	- what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - fix login attempt tracking
-- % played bar for tracks
 - redo sound backend with https://github.com/andrewrk/node-groove orrr https://github.com/Richienb/audic/blob/master/src/index.ts
 - speech commands!! annyang? (replace Temp?F on client)
 - store local settings so server resume is smooth
@@ -23,6 +22,13 @@ Todos:
 - make lights update every 60000ms
 - rpi status page with like cpu temp and memory usage https://github.com/odensc/pi-temperature/blob/master/index.js
 - instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
+- sound output choice: local client, server, or sonos (https://www.npmjs.com/package/sonos)
+- make my own custom version of nodetunes that implements https://github.com/stephen/nodetunes pull requests
+- if arduino crashes try to restart every x ms
+- test ilan method of audio w PCM frequency determination
+- lengthen timer check to 60s
+- adjust my schedule
+- lightmode "presets" which will set light or room combos to certain predetermined levels
 
 done:
 
@@ -33,6 +39,7 @@ done:
 - fix soundcloud change user
 - if playing airplay clientEvents should cancel in soundManager
 - proper NPM start command that starts forever (and stop + clean command too)
+- % played bar for tracks
 
 what I think is done but needs to be bugtested:
 

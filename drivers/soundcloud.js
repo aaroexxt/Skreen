@@ -669,8 +669,8 @@ var SCUtils = {
                         //console.log("SC RESPONSE URL: "+response.url+", HEADERS: "+JSON.stringify(response.headers.entries()));
                         remoteFileSize(response.url, function(err, size) { //get size of file
                             if (err) {
-                                if (err.toString().indexOf("401") > 0) {
-                                    console.warn("A 401 error was recieved on attempt to get size; denied. Can't fetch track");
+                                if (err.toString().indexOf("401") > 0 || err.toString().indexOf("404") > 0) {
+                                    console.warn("A 401 or 404 error was recieved on attempt to get size; denied. Can't fetch track");
                                     SCUtils.track401Offset++;
                                     return resolve();
                                 } else {

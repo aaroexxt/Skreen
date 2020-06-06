@@ -190,7 +190,7 @@ const SoundManagerV2 = {
                             type: "trackForward",
                             origin: "internal (trackFinished)"
                         }); //request next track
-                    })
+                    });
 
                     //INTERACTTIMER
                     _this.interactTimer.init(soundcloudSettings.minInteractionWaitTime/1000);

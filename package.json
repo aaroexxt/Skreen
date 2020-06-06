@@ -9,7 +9,7 @@
   "scripts": {
     "start": "sudo forever start --fifo -a --uid skreen skreen.js",
     "stop": "sudo forever stop skreen",
-    "clean": "read -r -p 'you sure you want to clear all logs? otherwise exit now' && forever cleanlogs && sudo forever cleanlogs"
+    "prestart": "sudo forever cleanlogs"
   },
   "repository": {
     "type": "git",

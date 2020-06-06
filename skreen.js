@@ -531,7 +531,7 @@ function generateUUID(){
 
 app.use(session({
 	genid: (req) => {
-		console.log('Inside UUID-generation');
+		//console.log('Inside UUID-generation');
 		return generateUUID(); // use UUIDs for session IDs
 	},
 	store: sessionFileStore, //filestore for sessions
@@ -1148,13 +1148,7 @@ LIGHTSrouter.get("/locationsList", function(req, res) {
 
 LIGHTSrouter.get("/devicesList", function(req, res) {
 	return res.end(RequestHandler.SUCCESS(roomData.devices));
-})
-
-
-//Catch anything that falls through and just send to client
-/*app.use(function(req, res, next){
-	res.redirect("/client");
-});*/
+});
 
 //Attach endpoints to app
 app.use('/login', AUTHrouter); //connect login to auth router
@@ -1162,6 +1156,11 @@ app.use('/api', APIrouter); //connect api to main
 APIrouter.use('/ardu/', ARDUrouter);
 APIrouter.use('/light/', LIGHTSrouter);
 APIrouter.use('/SC', SCrouter); //connect soundcloud router to api
+
+//Any 404 
+app.get("*", (req, res) => {
+	res.redirect("/client");
+});
 
 console.log("[AUTH] Init server begun");
 server.listen(runtimeSettings.serverPort, () => {

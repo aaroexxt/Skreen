@@ -1507,12 +1507,6 @@ const globals = {
                         colorValueBoxRectEnd: "#333"
                     }).draw();
                 },
-                updateSpeed: function(moduleReference) {
-                    var speedIndicator = document.getElementById(moduleReference.properties.speedIndicatorElement);
-                    speedIndicator.innerHTML = moduleReference.properties.connectionSpeed.mbps+" MB/s";
-
-                    moduleReference.state = "waitUpdateSpeed";
-                },
                 updateTime: function(moduleReference) {
                     var timeIndicator = document.getElementById(moduleReference.properties.timeIndicatorElement);
                     var d = new Date();
