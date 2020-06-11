@@ -70,9 +70,7 @@ class timingM {
 		this.trgDevices = devices;
 		this.enabled = true; //set enabled flag
 
-		this.updateLoop = setInterval(function(){self.checkEvents()},30000); //setup interval handler to check minutes
-
-		
+		this.updateLoop = setInterval(function(){self.checkEvents()},60000); //setup interval handler to check minutes
 	}
 
 	checkEvents() {
@@ -148,9 +146,13 @@ class timingM {
 					try {
 						var data = JSON.parse(chunk.toString());
 						var d = new Date(Date.parse(data.datetime));//+(data.raw_offset*1000));
-						return resolve({hours: d.getHours(), minutes: d.getMinutes()});
+						return resolve({
+							hours: d.getHours(),
+							minutes: d.getMinutes(),
+							seconds: d.getSeconds()
+						});
 					} catch(e) {
-						return reject("JSON parsing error");
+						return reject("JSON parsing error in timing time calculation");
 					}
 				});
 			}).on('error', function(e) {

@@ -1,34 +1,26 @@
 Todos:
 
-- make logos bigger on main client file
+- quick modes button
 - make login path for phone
 - make random http request attempt redirect to main client file
 - add a switch for timer on/off
 - make the settings page on main client file have something or remove it
 	- what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - fix login attempt tracking
-- redo sound backend with https://github.com/andrewrk/node-groove orrr https://github.com/Richienb/audic/blob/master/src/index.ts
 - speech commands!! annyang? (replace Temp?F on client)
 - store local settings so server resume is smooth
-- "server terminate" button in case things are bad (will interrupt playback)
-- client check isup periodically and if it's down prompt dialogue
-- switch to Express REST api mode (see https://blog.feathersjs.com/http-vs-websockets-a-performance-comparison-da2533f13a77)
-- split routes into their own file (https://www.robinwieruch.de/node-express-server-rest-api at bottom) and make initialization in seperate files as well
 - fadeout effect on menu change client side
 - Can type passcode with number keys + enter
 - track length of airplay track broadcast to client
 - volSet path
 - display current volume/freq on scale main client page
-- make lights update every 60000ms
-- rpi status page with like cpu temp and memory usage https://github.com/odensc/pi-temperature/blob/master/index.js
+- rpi status with memory usage
 - instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
-- sound output choice: local client, server, or sonos (https://www.npmjs.com/package/sonos)
-- make my own custom version of nodetunes that implements https://github.com/stephen/nodetunes pull requests
+- make my own custom version of nodetunes that implements https://github.com/stephen/pnodetunes ull requests
 - if arduino crashes try to restart every x ms
-- test ilan method of audio w PCM frequency determination
-- lengthen timer check to 60s
-- adjust my schedule
+
 - lightmode "presets" which will set light or room combos to certain predetermined levels
+- builtin delta method for lightmode instead of calcualting it on client side
 
 done:
 
@@ -40,7 +32,11 @@ done:
 - if playing airplay clientEvents should cancel in soundManager
 - proper NPM start command that starts forever (and stop + clean command too)
 - % played bar for tracks
-
-what I think is done but needs to be bugtested:
-
+- make logos bigger on main client file
+- time now updates from server and world time api as reference
 - fix bug where multiple music timers can be going at once? or smth like that (seems to happen on fast play/pause)
+- pop up if you disconnect, checking isup or using heartbeatMS in globals
+- adjust my schedule
+- make lights update every 60000ms
+- "server terminate" button in case things are bad (will interrupt playback)
+- rpi status page with cpu temp https://github.com/odensc/pi-temperature/blob/master/index.js

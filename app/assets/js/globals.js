@@ -591,6 +591,9 @@ const globals = {
                             console.log("RuntimeInfo: ",data);
                         }
 
+                        moduleReference.disconnAlert = false; //reset disconn alert
+                        bootbox.hideAll(); //hide the dialog if it's still up
+
                         globals.constants.readySteps.gotRuntimeInformation = true;
                         var keys = Object.keys(data); //only override keys from jsondat
                         for (var i=0; i<keys.length; i++) {
@@ -607,22 +610,14 @@ const globals = {
                             moduleReference.properties.heartbeatMS = Number(globals.constants.runtimeInformation.heartbeatMS)
 
                         }
-                        if (typeof globals.constants.runtimeInformation.outsideTemp == "undefined") {
-                            console.warn("OutsideTemp not defined in globals; not setting dashboard extTemp");
-                        } else {
-                            document.getElementById(moduleReference.properties.externalTempElement).innerHTML = "EXT: "+globals.constants.runtimeInformation.outsideTemp+"°F";
-                        }
-                        if (typeof globals.constants.runtimeInformation.insideTemp == "undefined") {
-                            console.warn("InsideTemp not defined in globals; not setting dashboard intTemp");
-                        } else {
-                            document.getElementById(moduleReference.properties.internalTempElement).innerHTML = "INT: "+globals.constants.runtimeInformation.insideTemp+"°F";
-                        }
-
-                        moduleReference.state = "wait"; //set new state to wait
                     }).catch( err => {
+                        if (!moduleReference.disconnAlert) {
+                            moduleReference.disconnAlert = true; //disable disconn alert
+                            bootbox.alert("Warning: Server Currently Offline")
+                        }
                         console.error("Error fetching runtime information: "+err);
-                        moduleReference.state = "wait";
                     })
+                    moduleReference.state = "wait";
                 },
                 wait: function(moduleReference) {
                     clearTimeout(moduleReference.properties.waitTimeout); //clear previous timeout
@@ -635,169 +630,9 @@ const globals = {
                 },
             },
             properties: {
-                heartbeatMS: 60000,
-                waitTimeout: 0,
-                externalTempElement: "extTemp",
-                internalTempElement: "intTemp",
-
-            }
-        },
-        popupDisplay: {
-            moduleName: "popupDisplay",
-            debugMode: true,
-
-            //STATE MACHINE LOGIC
-            realState: "uninit",
-            set state(state) { //use getter/setter logic
-                if (this.debugMode) {
-                    console.log("changing state in module '"+this.moduleName+"' to '"+state+"'");
-                }
-
-                if (!this.methods[state]) {
-                    console.error("Cannot change state in module name "+this.moduleName+" to new state "+state+" because that method does not exist");
-                } else {
-                    let prevState = this.realState;
-                    try {
-                        this.realState = state;
-                        this.methods[state](this); //run method exposed in methods
-                    } catch(e) {
-                        this.realState = prevState;
-                        console.error("Error changing state in module name "+this.moduleName+" to new state "+state+" because '"+e+"'");
-                    }
-                }
-            },
-            get state() {
-                return this.realState; //return state
-            },
-
-            //METHOD LOGIC
-            methods: {
-                init: function(moduleReference) {}, //no init needed
-                displayMain: function(moduleReference) {
-                    if (!moduleReference) { //bck
-                        moduleReference = globals.modules.popupDisplay;
-                    }
-                    try {
-                        moduleReference.properties.dialogObject.modal('hide');
-                    } catch(e){
-                        if (moduleReference.debugMode) {
-                            console.warn("failed to hide A modal, could still be onscreen");
-                        }
-                    }
-
-                    moduleReference.properties.dialogObject = bootbox.dialog({
-                        message: `
-                            <hr class="asep">
-                            <img class="asep" src="/images/a.png">
-                            <center>
-                                <h2>Information</h2>
-                                <p>Frontend Version: `+globals.constants.runtimeInformation.frontendVersion+`
-                                <br>Backend Version: `+globals.constants.runtimeInformation.backendVersion+`
-                                <br>Node.JS Server Connected: `+globals.constants.runtimeInformation.nodeConnected+`
-                                <br>Arduino Connected: `+globals.constants.runtimeInformation.arduinoConnected+`
-                                <br>Heartbeat Timeout (s): `+(globals.constants.runtimeInformation.heartbeatMS/1000)+`
-                                </p>
-                                <button onclick="globals.modules.runtimeEvents.methods.getRuntimeInformation(); setTimeout( () => {globals.modules.popupDisplay.methods.displayMain()},300);">Update Runtime Information</button>
-                                <br>
-                                <h3>Car Stats</h3>
-                            </center>
-                            <img src="/images/car.png" style="float: left; height: 120px; width: 440px; margin-left: 2%;"></img>
-                            <div style="float: left; margin-left: 1%;">
-                                <p style="font-size: 18px">
-                                    Car Odometer: `+globals.constants.runtimeInformation.odometer+`mi
-                                    <br>
-                                    Server Status: `+globals.constants.runtimeInformation.status+`
-                                    <br>
-                                    Server Uptime: `+globals.constants.runtimeInformation.uptime+`
-                                    <br>
-                                    Users Connected to Server: `+globals.constants.runtimeInformation.users+`
-                                    <br>
-                                </p>
-                            </div>
-                            <br>
-                            <br>
-                            <br>
-                            <br>
-                            <br>
-                            <br>
-                            <center>
-                                <h4>Idea, Design, UI, and Code © Aaron Becker, 2018.</h4>
-                                <h4>A big thanks to Andrew Cummings for the name "CarLOS"</h4>
-                                <h4>Credit to Google, Node.js, OpenCV, Bootstrap, and Bootbox.js Developers for software used in this program</h4>
-                            </center>
-                        `,
-                        backdrop: false,
-                        closeButton: false,
-                        onEscape: true,
-                        size: "large",
-                        className: "center",
-                        buttons: {
-                            cancel: {
-                                label: "Close Window",
-                                className: "btncenter",
-                                callback: function() {
-                                    moduleReference.properties.dialogObject.modal('hide');
-                                }
-                            },
-                            advancedSettings: {
-                                label: "Advanced",
-                                className: "btncenter",
-                                callback: function() {
-                                    moduleReference.properties.dialogObject.modal('hide');
-                                    setTimeout(() => {
-                                        moduleReference.state = "displayAdvanced";
-                                    }, 300);
-                                }
-                            }
-                        }
-                    })
-                },
-                displayAdvanced: function(moduleReference) {
-                    if (!moduleReference) { //bck
-                        moduleReference = globals.modules.popupDisplay;
-                    }
-
-                    moduleReference.properties.dialogObject = bootbox.dialog({
-                        message: `
-                            <hr class="asep">
-                            <img class="asep" src="/images/a.png">
-                            <center>
-                                <h2>Advanced Settings</h2>
-                                <button disabled onclick="globals.music.togglePlayerOutput();">(BETA): Toggle Music Output</button>
-                                <p>Will toggle output of soundcloud playing to be server audio port or client device. Warning: Needs internet if playing on client device. More stable+tested more on server side. (THIS FEATURE IS CURRENTLY DISABLED)</p>
-                                <br>
-                                <p>Currently playing on: `+((globals.modules.music.properties.playMusicOnServer) ? "server" : "client")+`
-                            </center>
-                        `,
-                        backdrop: false,
-                        closeButton: false,
-                        onEscape: true,
-                        size: "large",
-                        className: "center",
-                        buttons: {
-                            cancel: {
-                                label: "Close Window",
-                                className: "btncenter",
-                                callback: function() {
-                                    moduleReference.properties.dialogObject.modal('hide');
-                                }
-                            },
-                            basicSettings: {
-                                label: "Back",
-                                className: "btncenter",
-                                callback: function() {
-                                    moduleReference.properties.dialogObject.modal('hide');
-                                    setTimeout(() => {
-                                        moduleReference.state = "displayMain";
-                                    },300);
-                                }
-                            }
-                        }
-                    });
-                }
-            },
-            properties: {
-                dialogObject: null
+                heartbeatMS: 10000,
+                disconnAlert: false,
+                waitTimeout: 0
             }
         },
         menu: {
@@ -897,7 +732,7 @@ const globals = {
                     music: false,
                     musicLights: false,
                     roomLights: false,
-                    lightsSettings: false
+                    settings: false
                 }
             }
         },
@@ -1320,6 +1155,123 @@ const globals = {
                 devicesContainerID: "mainRoomLights-devicesContainer"
             }
         },
+        deviceSettingsManager: {
+            moduleName: "deviceSettingsManager",
+            debugMode: true,
+
+            //STATE MACHINE LOGIC
+            realState: "uninit",
+            set state(state) { //use getter/setter logic
+                if (this.debugMode) {
+                    console.log("changing state in module '"+this.moduleName+"' to '"+state+"'");
+                }
+
+                if (!this.methods[state]) {
+                    console.error("Cannot change state in module name "+this.moduleName+" to new state "+state+" because that method does not exist");
+                } else {
+                    let prevState = this.realState;
+                    try {
+                        this.realState = state;
+                        this.methods[state](this); //run method exposed in methods
+                    } catch(e) {
+                        this.realState = prevState;
+                        console.error("Error changing state in module name "+this.moduleName+" to new state "+state+" because '"+e+"'");
+                    }
+                }
+            },
+            get state() {
+                return this.realState; //return state
+            },
+
+            //METHOD LOGIC
+            methods: {
+                init: function(mR) {
+                    mR.properties.rpiTempGauge = new RadialGauge({
+                        renderTo: mR.properties.rpiTempStatID,
+                        width: mR.properties.gaugeWidth,
+                        height: mR.properties.gaugeHeight,
+                        units: "°C",
+                        minValue: 0,
+                        startAngle: 90,
+                        ticksAngle: 180,
+                        valueBox: false,
+                        maxValue: 100,
+                        majorTicks: [
+                            "0",
+                            "10",
+                            "20",
+                            "30",
+                            "40",
+                            "50",
+                            "60",
+                            "70",
+                            "80",
+                            "90",
+                            "100"
+                        ],
+                        minorTicks: 5,
+                        strokeTicks: true,
+                        highlights: [
+                            {
+                                "from": 86,
+                                "to": 100,
+                                "color": "rgba(200, 50, 50, .75)"
+                            }
+                        ],
+                        colorPlate: "#fff",
+                        borderShadowWidth: 0,
+                        borders: false,
+                        needleType: "arrow",
+                        needleWidth: 2,
+                        needleCircleSize: 7,
+                        needleCircleOuter: true,
+                        needleCircleInner: false,
+                        animationDuration: 500,
+                        animationRule: "linear"
+                    }).draw();
+
+
+                    //Add the rest of the gauges here
+
+                    mR.state = "statUpdate";
+                },
+                statUpdate: function(mR) {
+                    SRH.request("/api/stat/temp").then(temp => {
+                        mR.properties.rpiTempGauge.value = temp;
+                    }).catch(e => {
+                        mR.properties.rpiTempGauge.value = 0;
+                        console.warn("Warning: error getting RPI temp for stats:",e);
+                    })
+
+                    //Add the rest of the gauges here
+
+                    mR.state = "waitStatUpdate";
+                },
+                waitStatUpdate: function(mR) {
+                    clearTimeout(mR.properties.statUpdateTimeout);
+                    mR.properties.statUpdateTimeout = setTimeout(() => {
+                        mR.state = "statUpdate";
+                    }, mR.properties.statUpdateDelay);
+                },
+                killServer: function() {
+                    bootbox.confirm("Do you want to kill the server?", res => {
+                        if (res) {
+                            SRH.request("/api/action/kill") //lol die server (but forever should restart it)
+                        }
+                    })
+                }
+            },
+            properties: {
+                gaugeWidth: 300,
+                gaugeHeight: 300,
+
+                statUpdateDelay: 1000,
+                statUpdateTimeout: undefined,
+
+                rpiTempStatID: "stats_rpiTemp",
+                rpiTempGauge: undefined
+            }
+        },
         speechManager: {
             moduleName: "speechManager",
             debugMode: true,
@@ -1384,228 +1336,60 @@ const globals = {
             //METHOD LOGIC
             methods: {
                 init: function(moduleReference) { //it's okay to do this stuff concurrently because they don't depend on each other
-                    moduleReference.state = "initStats";
-                    moduleReference.state = "initHUD";
+                    moduleReference.state = "getReferenceTime";
+                    moduleReference.state = "updateTime";
                 },
-                initStats: function(moduleReference) {
-                    if (typeof Chart == "undefined" || typeof RadialGauge == "undefined" || typeof LinearGauge == "undefined") {
-                        console.error("Is Chart.js and Gauges.js installed? Missing some libs");
-                        return;
-                    }
-
-                    var statsElem = document.getElementById(moduleReference.properties.statsChartElement);
-                    var scatterChart = new Chart(statsElem, {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        type: 'line',
-                        data: {
-                            datasets: [{
-                                label: 'Average PWR',
-                                data: [
-                                    {
-                                        x: 0,
-                                        y: 0
-                                    },
-                                    {
-                                        x: 10,
-                                        y: 10
-                                    }
-                                ],
-                                backgroundColor : "rgba(0,220,0,0.22)"
-                            }]
-                        },
-                        options: {
-                            scales: {
-                                xAxes: [{
-                                    type: 'linear',
-                                    position: 'bottom',
-                                    labelString: 'X Axis'
-                                }],
-                                yAxes: [{
-                                    type: 'linear',
-                                    labelString: 'Y Axis'
-                                }]
-                            }
+                getReferenceTime: function(moduleReference) {
+                    var timeIndicator = document.getElementById(moduleReference.properties.timeIndicatorElement);
+                    SRH.request("/api/time").then(response => {
+                        if (moduleReference.debugMode) {
+                            console.log("Got reference time from server:",response);
                         }
-                    });
-
-                    var speedGauge = new RadialGauge({
-                        width: 300,
-                        height: 300,
-                        renderTo: document.getElementById(moduleReference.properties.statsSpeedGaugeElement)
-                    }).draw();
-                    var engineRPMGauge = new RadialGauge({
-                        width: 300,
-                        height: 300,
-                        renderTo: document.getElementById(moduleReference.properties.statsRPMGaugeElement)
-                    }).draw();
-                    var temperatureGauge = new RadialGauge({
-                        renderTo: document.getElementById(moduleReference.properties.statsTempGaugeElement),
-                        width: 300,
-                        height: 300,
-                        units: "°F",
-                        title: "Temperature",
-                        minValue: -50,
-                        maxValue: 50,
-                        majorTicks: [
-                            -50,
-                            -40,
-                            -30,
-                            -20,
-                            -10,
-                            0,
-                            10,
-                            20,
-                            30,
-                            40,
-                            50
-                        ],
-                        minorTicks: 2,
-                        strokeTicks: true,
-                        highlights: [
-                            {
-                                "from": -50,
-                                "to": 0,
-                                "color": "rgba(0,0, 255, .3)"
-                            },
-                            {
-                                "from": 0,
-                                "to": 50,
-                                "color": "rgba(255, 0, 0, .3)"
-                            }
-                        ],
-                        ticksAngle: 225,
-                        startAngle: 67.5,
-                        colorMajorTicks: "#ddd",
-                        colorMinorTicks: "#ddd",
-                        colorTitle: "#eee",
-                        colorUnits: "#ccc",
-                        colorNumbers: "#eee",
-                        colorPlate: "#222",
-                        borderShadowWidth: 0,
-                        borders: true,
-                        needleType: "arrow",
-                        needleWidth: 2,
-                        needleCircleSize: 7,
-                        needleCircleOuter: true,
-                        needleCircleInner: false,
-                        animationDuration: 1500,
-                        animationRule: "linear",
-                        colorBorderOuter: "#333",
-                        colorBorderOuterEnd: "#111",
-                        colorBorderMiddle: "#222",
-                        colorBorderMiddleEnd: "#111",
-                        colorBorderInner: "#111",
-                        colorBorderInnerEnd: "#333",
-                        colorNeedleShadowDown: "#333",
-                        colorNeedleCircleOuter: "#333",
-                        colorNeedleCircleOuterEnd: "#111",
-                        colorNeedleCircleInner: "#111",
-                        colorNeedleCircleInnerEnd: "#222",
-                        valueBoxBorderRadius: 0,
-                        colorValueBoxRect: "#222",
-                        colorValueBoxRectEnd: "#333"
-                    }).draw();
+                        moduleReference.properties.currentHours = response.hours;
+                        moduleReference.properties.currentMinutes = response.minutes;
+                        moduleReference.properties.currentSeconds = response.seconds;
+                    }).catch(e => {
+                        console.error("Error fetching time from server:",e);
+                        timeIndicator.innerHTML = "TimeError";
+                    })
+                    moduleReference.state = "waitUpdateReferenceTime";
                 },
                 updateTime: function(moduleReference) {
+                    let mP = moduleReference.properties;
                     var timeIndicator = document.getElementById(moduleReference.properties.timeIndicatorElement);
-                    var d = new Date();
-                    var o = {
-                        hour: 'numeric',
-                        minute: 'numeric',
-                        hour12: true
-                    };
-                    var ts = d.toLocaleString('en-US', o);
-                    timeIndicator.innerHTML = ts;
-
-                    moduleReference.state = "waitUpdateTime";
-                },
-                getWifiSpeed: function(moduleReference) {
-                    if (!moduleReference) { //bck
-                        moduleReference = globals.modules.UIIndicators;
+                    mP.currentSeconds += mP.timeIndicatorUpdateTime/1000; //Advance seconds
+                    if (mP.currentSeconds >= 60) {
+                        mP.currentSeconds = mP.currentSeconds-60;
+                        mP.currentMinutes++;
+                    }
+                    if (mP.currentMinutes >= 60) {
+                        mP.currentMinutes = mP.currentMinutes-60;
+                        mP.currentHours++;
+                    }
+                    if (mP.currentHours >= 24) {
+                        mP.currentHours = mP.currentHours-24;
                     }
 
-                    return new Promise( (resolve, reject) => {
-                        var imageAddr = "https://aaronbecker.tech/5mb.jpg";
-                        var startTime, endTime;
-                        var downloadSize = 5245329;
-                        var download = new Image();
-                        console.log("started download")
-                        download.onload = () => {
-                            endTime = (new Date()).getTime();
-                            var duration = (endTime - startTime) / 1000; //Math.round()
-                            var bitsLoaded = downloadSize * 8;
-                            var speedBps = (bitsLoaded / duration).toFixed(2);
-                            var speedKbps = (speedBps / 1024).toFixed(2);
-                            var speedMbps = (speedKbps / 1024).toFixed(2);
-                            moduleReference.properties.connectionSpeed.bps = speedBps;
-                            moduleReference.properties.connectionSpeed.kbps = speedKbps;
-                            moduleReference.properties.connectionSpeed.mbps = speedMbps;
-                            resolve(speedMbps);
-                        }
-                        download.onerror = () => {
-                            console.warn("Error getting image to determine wifi speed; are you connected to a network?");
-                            moduleReference.properties.connectionSpeed.bps = 0;
-                            moduleReference.properties.connectionSpeed.kbps = 0;
-                            moduleReference.properties.connectionSpeed.mbps = 0;
-                            reject();
-                        }
-                        startTime = (new Date()).getTime();
-                        var cacheBuster = "?nnn=" + startTime;
-                        download.src = imageAddr + cacheBuster;
-                    });
-                },
-                updateWifi: function(moduleReference) {
-                    var wifiIndicator = document.getElementById(moduleReference.properties.wifiIndicatorElement);
-                    var position = 0;
-                    var direction = 1;
-                    var seek = setInterval(function(){
-                        wifiIndicator.src = "/images/wifiL"+position+".png";
-                        position+= direction;
-                        if (position > 3 || position < 1) {
-                            direction*=-1;
-                        }
-                    },500);
-                    moduleReference.methods.getWifiSpeed(moduleReference).then(speed => {
-                        clearInterval(seek);
-                        if (speed > 10) {
-                            wifiIndicator.src = "/images/wifi5.png";
-                        } else if (speed > 5) {
-                            wifiIndicator.src = "/images/wifi4.png";
-                        } else if (speed > 2) {
-                            wifiIndicator.src = "/images/wifi3.png";
-                        } else if (speed > 1) {
-                            wifiIndicator.src = "/images/wifi2.png";
-                        } else {
-                            wifiIndicator.src = "/images/wifi1.png";
-                        }
+                    if (moduleReference.debugMode) {
+                        console.log("updateTime called; refHours="+mP.currentHours+", refMinutes="+mP.currentMinutes+", refSeconds="+mP.currentSeconds);
+                    }
+                    let AMPM = mP.currentHours > 12 ? "PM" : "AM";
+                    let hours = ((mP.currentHours + 11) % 12 + 1); //do 24h to 12h time conversion
+                    hours = Math.round(hours);
+                    if (hours < 10) {
+                        hours = "0"+hours;
+                    }
+                    let minutes = Math.round(mP.currentMinutes);
+                    if (minutes < 10) {
+                        minutes = "0"+minutes;
+                    }
+                    let seconds = Math.round(mP.currentSeconds);
+                    if (seconds < 10) {
+                        seconds = "0"+seconds;
+                    }
+                    timeIndicator.innerHTML = hours+":"+minutes+":"+seconds+" "+AMPM;
 
-                        moduleReference.state = "waitUpdateWifi";
-                    })
-                    .catch(err => {
-                        clearInterval(seek);
-                        wifiIndicator.src = "/images/wifiE.png";
-
-                        moduleReference.state = "waitUpdateWifi";
-                    })
-                },
-                initHUD: function(moduleReference) {
-                    //SPEED INDICATOR
-                    moduleReference.state = "updateSpeed";
-                    
-                    //TIME
-                    moduleReference.state = "updateTime";
-
-                    //WIFI
-                    moduleReference.state = "updateWifi";
-    
-    
-                },
-                waitUpdateWifi: function(mR) {
-                    clearTimeout(mR.properties.wifiUpdateTimeout); //just in case
-                    mR.properties.wifiUpdateTimeout = setTimeout( () => {
-                        mR.state = "updateWifi";
-                    },mR.properties.wifiUpdateTime);
+                    moduleReference.state = "waitUpdateTime";
                 },
                 waitUpdateTime: function(mR) {
                     clearTimeout(mR.properties.timeUpdateTimeout); //just in case
@@ -1613,34 +1397,24 @@ const globals = {
                         mR.state = "updateTime";
                     },mR.properties.timeIndicatorUpdateTime);
                 },
-                waitUpdateSpeed: function(mR) {
-                    clearTimeout(mR.properties.speedUpdateTimeout); //just in case
-                    mR.properties.speedUpdateTimeout = setTimeout( () => {
-                        mR.state = "updateSpeed";
-                    },mR.properties.speedIndicatorUpdateTime);
+                waitUpdateReferenceTime: function(mR) {
+                    clearTimeout(mR.properties.timeReferenceUpdateTimeout);
+                    mR.properties.timeReferenceUpdateTimeout = setTimeout(() => {
+                        mR.state = "getReferenceTime";
+                    }, mR.properties.timeIndicatorGetReferenceTimeDelay);
                 }
             },
             properties: {
-                connectionSpeed: {
-                    bps: 0,
-                    kbps: 0,
-                    mbps: 0
-                },
-                wifiUpdateTime: 320000, //update every 20 mins (1200000)
+                timeIndicatorGetReferenceTimeDelay: 3600*1000, //get new reference from server every hour
                 timeIndicatorUpdateTime: 1000,
-                speedIndicatorUpdateTime: 1000,
-                speedIndicatorElement: "wifispeed",
-                wifiIndicatorElement: "wifilevel",
                 timeIndicatorElement: "time",
 
-                speedUpdateTimeout: 0, //timeout holders
-                wifiUpdateTimeout: 0,
-                timeUpdateTimeout: 0,
+                currentHours: 0,
+                currentMinutes: 0,
+                currentSeconds: 0,
 
-                statsChartElement: "stats_powerChart",
-                statsSpeedGaugeElement: "stats_speedGauge",
-                statsRPMGaugeElement: "stats_rpmGauge",
-                statsTempGaugeElement: "stats_temperatureGauge"
+                timeReferenceUpdateTimeout: 0,
+                timeUpdateTimeout: 0
             }
         },
 

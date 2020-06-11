@@ -16,10 +16,28 @@
 			"devices": ["AaronL","AaronR"]
 		}
 	},
-	"timeShift": [
+	"timeShiftOld": [
 		{"at": "10:00,pm", "maxLevel": 50, "devices": ["AaronR","AaronL"]},
 		{"at": "11:00,pm", "maxLevel": 25, "devices": ["AaronR","AaronL"]},
 		{"at": "11:30,pm", "maxLevel": 15, "devices": ["AaronR","AaronL"]},
 		{"at": "12:00,am", "maxLevel": 2, "devices": ["AaronR","AaronL"]}
-	]
+	],
+	"timeShift": [
+		{"at": "10:00,pm", "maxLevel": 50, "devices": ["AaronR","AaronL"]},
+		{"at": "11:00,pm", "maxLevel": 40, "devices": ["AaronR","AaronL"]},
+		{"at": "11:30,pm", "maxLevel": 30, "devices": ["AaronR","AaronL"]},
+		{"at": "12:00,am", "maxLevel": 20, "devices": ["AaronR","AaronL"]},
+		{"at": "1:00,am", "maxLevel": 6, "devices": ["AaronR","AaronL"]}
+	],
+	"quickMode": {
+		"Late Night": {
+			"power": 3, "devices": ["AaronR", "AaronL"]
+		},
+		"Wake Up": {
+			"power": 75, "devices": ["AaronR", "AaronL"]
+		},
+		"Eat": {
+			"power": 15, "devices": ["AaronR", "AaronL"]
+		}
+	}
 }

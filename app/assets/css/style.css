@@ -167,7 +167,6 @@ div.inforight {
 .main p, .main li, .main ul, .main pre, .main s, .main del, .main span {
     font-size: 1.308em;
     color: black;
-    font-weight: 200;
 }
 @media screen and (max-width: 500px) {
 /* applies only if the screen is narrower than 500px */
@@ -230,8 +229,9 @@ div.img img {
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
     overflow: hidden;
-    font-weight: 200;
     font-family: 'Source Sans Pro';
+    padding-top: 10px;
+    padding-bottom: 10px;
 
     /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#aebcbf+0,0a0e0a+0,bebebe+0,ebebeb+50,bebebe+100 */
     background: #bebebe; /* Old browsers */
@@ -251,7 +251,6 @@ div.img img {
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
     overflow: hidden;
-    font-weight: 200;
     font-family: 'Source Sans Pro';
 
     /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#aebcbf+0,0a0e0a+0,bebebe+0,ebebeb+50,bebebe+100 */
@@ -271,7 +270,6 @@ div.img img {
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
     overflow: hidden;
-    font-weight: 200;
     font-family: 'Source Sans Pro';
 
     /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#aebcbf+0,0a0e0a+0,bebebe+0,ebebeb+50,bebebe+100 */
@@ -285,7 +283,7 @@ div.img img {
 }
 .menutop li, .menubottom li {
     display: inline-block;
-    transition: 0.4s;
+    transition: 0.1s;
 }
 
 .disableMenuElement {
@@ -297,15 +295,21 @@ div.img img {
     display: inline-block;
     font-family: 'Source Sans Pro';
     vertical-align: middle;
-    transform: scale(0.5, 1.15) !important;
+    transform: scale(0.5, 1.15);
     background: none !important;
 }
+
+.menutext {
+    font-size: 18px;
+    transform: none !important;
+    font-weight: 200;
+}
+
 .menubreaker {
     display: inline-block;
     font-family: 'Source Sans Pro';
     vertical-align: middle;
     line-height: normal;
-    font-weight: 100;
     transform: none !important;
     background: none !important;
     padding-left: 10px;
@@ -337,7 +341,7 @@ div.img img {
     display:inline-block;
 }
 .menutop li:hover, .menubottom li:hover {
-    transform: scale(1.1);
+    transform: scale(1.03);
 }
 .menulink:hover {
     color: #cccccc;
@@ -434,19 +438,14 @@ img.asep {
 }
 .circle {
   border-radius: 50%;
-  behavior: url(PIE.htc);
   /* remove if you don't care about IE8 */
-  padding: 3px;
+  padding: 4px;
   border: 2px solid #666;
   color: #666;
   text-align: center;
 }
 .circle.selected {
-    background-color: #666;
-}
-.fullScreenMap {
-    min-height: 100%;
-    position: inherit !important;
+    background-color: rgb(150,150,150);
 }
 .fullScreen {
     position: fixed;
@@ -477,11 +476,11 @@ img.asep {
 }
 .controlButton:hover {
     background: rgba(200, 200, 200, 1);
-    transform: scale(1.02) !important;
+    transform: scale(1.05) !important;
 }
 .controlButton.playPause:hover {
     background: rgba(100, 100, 100, 1);
-    transform: scale(1.02) !important;
+    transform: scale(1.05) !important;
 }
 .controlButton.activeLoopShuffle {
     background: rgba(255,200,0, 0.8);

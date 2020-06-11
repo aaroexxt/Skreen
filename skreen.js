@@ -70,6 +70,7 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const singleLineLog = require('single-line-log').stdout; //single line logging
+const childProcessSpawn = require("child_process").spawn;
 
 var cwd = __dirname;
 process.title = "Skreen V1";
@@ -453,6 +454,7 @@ var SCrouter = express.Router();
 var AUTHrouter = express.Router();
 var ARDUrouter = express.Router();
 var LIGHTSrouter = express.Router();
+var STATrouter = express.Router();
 
 const session = require('express-session');
 const FileStore = require('session-file-store')(session);
@@ -842,6 +844,46 @@ APIrouter.get("/speech/:data", function(req, res) {
     }
 })
 
+APIrouter.get("/time", function(req, res) {
+	timing.getCurrentTime().then(time => {
+		return res.end(RequestHandler.SUCCESS(time));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE(e));
+	})
+})
+
+APIrouter.get("/action/kill", function(req, res) {
+	res.end(RequestHandler.SUCCESS("bai"));
+	console.log("Client requested exit; exiting");
+	setTimeout(() => {
+		process.exit()
+	},1500);
+})
+
+//Stat Routes
+STATrouter.get("/temp", function(req, res) {
+	//Code yoinked from odensc/pi-temperature @ https://github.com/odensc/pi-temperature/blob/master/index.js
+	let regex = /temp=([^'C]+)/;
+	let cmd = childProcessSpawn("/opt/vc/bin/vcgencmd", ["measure_temp"]);
+
+	cmd.stdout.on("data", function(buf) {
+		return res.end(RequestHandler.FAILURE(parseFloat(regex.exec(buf.toString("utf8"))[1]))); //lmao what a oneliner
+	});
+
+	cmd.stderr.on("data", function(buf) {
+		return res.end(RequestHandler.FAILURE(buf.toString("utf8")));
+	});
+
+	cmd.on('error', function(err) {
+		return res.end(RequestHandler.FAILURE(err));
+	})
+})
+
+//STATrouter.get("/childProces")
+
+//QuickMode Routes
+//QMrouter.get("/quickMode/list")
+
 //Soundcloud Routes
 
 SCrouter.get("/clientReady", function(req, res) {
@@ -1153,6 +1195,7 @@ LIGHTSrouter.get("/devicesList", function(req, res) {
 //Attach endpoints to app
 app.use('/login', AUTHrouter); //connect login to auth router
 app.use('/api', APIrouter); //connect api to main
+APIrouter.use('/stat', STATrouter); //connect stat to api
 APIrouter.use('/ardu/', ARDUrouter);
 APIrouter.use('/light/', LIGHTSrouter);
 APIrouter.use('/SC', SCrouter); //connect soundcloud router to api

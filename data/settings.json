@@ -4,7 +4,7 @@
     "information": {
         "frontendVersion": 1,
         "backendVersion": 1,
-        "heartbeatMS": 60000,
+        "heartbeatMS": 10000,
         "dynamicMusicMenu": true,
         "arduinoConnected": false
     },
