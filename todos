@@ -3,7 +3,6 @@ Todos:
 - quick modes button
 - make login path for phone
 - make random http request attempt redirect to main client file
-- add a switch for timer on/off
 - make the settings page on main client file have something or remove it
 	- what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - fix login attempt tracking
@@ -13,12 +12,11 @@ Todos:
 - Can type passcode with number keys + enter
 - track length of airplay track broadcast to client
 - volSet path
-- display current volume/freq on scale main client page
-- rpi status with memory usage
 - instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
-- make my own custom version of nodetunes that implements https://github.com/stephen/pnodetunes ull requests
+- make my own custom version of nodetunes that implements https://github.com/stephen/nodetunes pull requests
 - if arduino crashes try to restart every x ms
-
+- make buttons bigger on music and lights
+- make buttons update and disable (like timer button)
 - lightmode "presets" which will set light or room combos to certain predetermined levels
 - builtin delta method for lightmode instead of calcualting it on client side
 
@@ -40,3 +38,6 @@ done:
 - make lights update every 60000ms
 - "server terminate" button in case things are bad (will interrupt playback)
 - rpi status page with cpu temp https://github.com/odensc/pi-temperature/blob/master/index.js
+- rpi status with memory usage
+- add a switch for timer on/off
+- display current volume/freq on scale main client page

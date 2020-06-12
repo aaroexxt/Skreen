@@ -70,7 +70,6 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 const singleLineLog = require('single-line-log').stdout; //single line logging
-const childProcessSpawn = require("child_process").spawn;
 
 var cwd = __dirname;
 process.title = "Skreen V1";
@@ -434,6 +433,12 @@ hub.begin().then(() => {
 //Timer setup for autodimming of lights, etc
 const timing = new timingHandler(roomData.timeShift, hub); //pass in hub reference to allow control
 timing.enableTimers(); //by default, enable the timers
+
+/**************************************
+--I14-- REALTIME DATA INIT CODE --I14--
+***************************************/
+
+const {RPIgetCPUInfo, RPIgetMemoryInfo, RPIgetTempInfo} = require("./drivers/rpiStats.js"); //require it in oneliner
 
 
 /***************************************
@@ -861,25 +866,28 @@ APIrouter.get("/action/kill", function(req, res) {
 })
 
 //Stat Routes
+
 STATrouter.get("/temp", function(req, res) {
-	//Code yoinked from odensc/pi-temperature @ https://github.com/odensc/pi-temperature/blob/master/index.js
-	let regex = /temp=([^'C]+)/;
-	let cmd = childProcessSpawn("/opt/vc/bin/vcgencmd", ["measure_temp"]);
-
-	cmd.stdout.on("data", function(buf) {
-		return res.end(RequestHandler.FAILURE(parseFloat(regex.exec(buf.toString("utf8"))[1]))); //lmao what a oneliner
-	});
-
-	cmd.stderr.on("data", function(buf) {
-		return res.end(RequestHandler.FAILURE(buf.toString("utf8")));
-	});
-
-	cmd.on('error', function(err) {
-		return res.end(RequestHandler.FAILURE(err));
+	RPIgetTempInfo().then(tempInfo => {
+		return res.end(RequestHandler.SUCCESS(tempInfo));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE(e));
 	})
-})
-
-//STATrouter.get("/childProces")
+});
+STATrouter.get("/cpu", function(req, res) {
+	RPIgetCPUInfo().then(cpuInfo => {
+		return res.end(RequestHandler.SUCCESS(cpuInfo));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE(e));
+	})
+});
+STATrouter.get("/mem", function(req, res) {
+	RPIgetMemoryInfo().then(memInfo => {
+		return res.end(RequestHandler.SUCCESS(memInfo));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE(e));
+	})
+});
 
 //QuickMode Routes
 //QMrouter.get("/quickMode/list")
@@ -1191,6 +1199,18 @@ LIGHTSrouter.get("/locationsList", function(req, res) {
 LIGHTSrouter.get("/devicesList", function(req, res) {
 	return res.end(RequestHandler.SUCCESS(roomData.devices));
 });
+
+LIGHTSrouter.get("/settings/timersEnabled", function(req, res) {
+	return res.end(RequestHandler.SUCCESS(timing.getTimersEnabled()));
+})
+LIGHTSrouter.get("/settings/timersEnabled/on", function(req, res) {
+	timing.enableTimers();
+	return res.end(RequestHandler.SUCCESS());
+})
+LIGHTSrouter.get("/settings/timersEnabled/off", function(req, res) {
+	timing.disableTimers();
+	return res.end(RequestHandler.SUCCESS());
+})
 
 //Attach endpoints to app
 app.use('/login', AUTHrouter); //connect login to auth router

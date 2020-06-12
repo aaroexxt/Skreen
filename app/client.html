@@ -52,15 +52,6 @@
 			  		<h3> Light Mode </h3>
 			  		<button class="PUpButton" onclick="globals.modules.musicLightsManager.methods.lightMode(1);">1</button>
 			  		<button class="PDownButton leftPad" onclick="globals.modules.musicLightsManager.methods.lightMode(2);">2</button>
-			  		<br>
-			  		<hr>
-			  		<h4>Minimum light-up value (Sensitivity):</h4>
-			  		<input id="musicLights-minTrigVal" value="17"></input>
-			  		<button onclick="globals.modules.musicLightsManager.methods.newValueMin(document.getElementById('musicLights-minTrigVal').value);">Set</button>
-			  		<br>
-			  		<h4>LEDs to update per tick (Speed):</h4>
-			  		<input id="musicLights-ledUpdateCt" value="4"></input>
-			  		<button onclick="globals.modules.musicLightsManager.methods.ledUpdateCount(document.getElementById('musicLights-ledUpdateCt').value);">Set</button> 
 				</center>
 			</div>
 			<div id="mainRoomLights" class="fullScreen" style="display: none">
@@ -80,11 +71,41 @@
 				<center>
 					<h1>Real-Time Data</h1>
 					<div>
-						<canvas id="stats_rpiTemp"></canvas>
-						<canvas id="stats_rpiMemUsage"></canvas>
-						<canvas id="stats_curAudFreq"></canvas>
-						<canvas id="stats_curAudVol"></canvas>
+						<center>
+							<canvas id="stats_rpiTemp"></canvas>
+							<canvas id="stats_rpiCpuUsage"></canvas>
+							<canvas id="stats_rpiMemUsage"></canvas>
+						</center>
+						<br>
+						<center>
+							<canvas id="stats_curAudFreq"></canvas>
+							<canvas id="stats_curAudVol"></canvas>
+						</center>
 					</div>
+					<hr>
+
+
+					<h1>Timer Configuration</h1>
+					<div>
+						<button id="set_timersOn" class="POnButton" onclick="globals.modules.deviceSettingsManager.methods.enableTimers();">Enable Timers</button>
+			  			<button id="set_timersOff" class="POffButton leftPad" onclick="globals.modules.deviceSettingsManager.methods.disableTimers();">Disable Timers</button>
+					</div>
+					<hr>
+
+
+					<h1>Music Lights Configuration</h1>
+			  		<div>
+				  		<h4>Minimum light-up value (Sensitivity):</h4>
+				  		<input id="musicLights-minTrigVal" value="17"></input>
+				  		<button onclick="globals.modules.musicLightsManager.methods.newValueMin(document.getElementById('musicLights-minTrigVal').value);">Set</button>
+				  		<br>
+				  		<h4>LEDs to update per tick (Speed):</h4>
+				  		<input id="musicLights-ledUpdateCt" value="4"></input>
+				  		<button onclick="globals.modules.musicLightsManager.methods.ledUpdateCount(document.getElementById('musicLights-ledUpdateCt').value);">Set</button>
+				  	</div>
+				  	<hr>
+
+
 					<h2> Advanced Stuff </h2>
 					<button class="POffButton" onclick="globals.modules.deviceSettingsManager.methods.killServer();">Kill Server</button>
 				</center>

@@ -130,6 +130,10 @@ class timingM {
 		this.enabled = false;
 	}
 
+	getTimersEnabled() {
+		return this.enabled;
+	}
+
 	getCurrentTime() {
 		return new Promise((resolve, reject) => {
 			http.get({

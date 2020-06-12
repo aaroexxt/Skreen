@@ -1190,7 +1190,7 @@ const globals = {
                         renderTo: mR.properties.rpiTempStatID,
                         width: mR.properties.gaugeWidth,
                         height: mR.properties.gaugeHeight,
-                        units: "°C",
+                        units: "Temp, °C",
                         minValue: 0,
                         startAngle: 90,
                         ticksAngle: 180,
@@ -1226,12 +1226,190 @@ const globals = {
                         needleCircleSize: 7,
                         needleCircleOuter: true,
                         needleCircleInner: false,
-                        animationDuration: 500,
-                        animationRule: "linear"
+                        animationDuration: 200,
+                        animationRule: "quad"
                     }).draw();
 
+                    mR.properties.rpiCPUGauge = new RadialGauge({
+                        renderTo: mR.properties.rpiCPUStatID,
+                        width: mR.properties.gaugeWidth,
+                        height: mR.properties.gaugeHeight,
+                        units: "CPU Usage, %",
+                        minValue: 0,
+                        startAngle: 90,
+                        ticksAngle: 180,
+                        valueBox: false,
+                        maxValue: 100,
+                        majorTicks: [
+                            "0",
+                            "10",
+                            "20",
+                            "30",
+                            "40",
+                            "50",
+                            "60",
+                            "70",
+                            "80",
+                            "90",
+                            "100"
+                        ],
+                        minorTicks: 5,
+                        strokeTicks: true,
+                        highlights: [
+                            {
+                                "from": 60,
+                                "to": 90,
+                                "color": "rgba(200, 125, 50, .75)"
+                            },
+                            {
+                                "from": 90,
+                                "to": 100,
+                                "color": "rgba(200, 50, 50, .75)"
+                            }
+                        ],
+                        colorPlate: "#fff",
+                        borderShadowWidth: 0,
+                        borders: false,
+                        needleType: "arrow",
+                        needleWidth: 2,
+                        needleCircleSize: 7,
+                        needleCircleOuter: true,
+                        needleCircleInner: false,
+                        animationDuration: 200,
+                        animationRule: "quad"
+                    }).draw();
 
-                    //Add the rest of the gauges here
+                    mR.properties.rpiMemGauge = new RadialGauge({
+                        renderTo: mR.properties.rpiMemStatID,
+                        width: mR.properties.gaugeWidth,
+                        height: mR.properties.gaugeHeight,
+                        units: "Mem Usage, %",
+                        minValue: 0,
+                        startAngle: 90,
+                        ticksAngle: 180,
+                        valueBox: false,
+                        maxValue: 100,
+                        majorTicks: [
+                            "0",
+                            "10",
+                            "20",
+                            "30",
+                            "40",
+                            "50",
+                            "60",
+                            "70",
+                            "80",
+                            "90",
+                            "100"
+                        ],
+                        minorTicks: 5,
+                        strokeTicks: true,
+                        highlights: [
+                            {
+                                "from": 75,
+                                "to": 90,
+                                "color": "rgba(200, 125, 50, .75)"
+                            },
+                            {
+                                "from": 90,
+                                "to": 100,
+                                "color": "rgba(200, 50, 50, .75)"
+                            }
+                        ],
+                        colorPlate: "#fff",
+                        borderShadowWidth: 0,
+                        borders: false,
+                        needleType: "arrow",
+                        needleWidth: 2,
+                        needleCircleSize: 7,
+                        needleCircleOuter: true,
+                        needleCircleInner: false,
+                        animationDuration: 200,
+                        animationRule: "quad"
+                    }).draw();
+
+                    mR.properties.volGauge = new LinearGauge({
+                        renderTo: mR.properties.volGaugeID,
+                        width: mR.properties.linGaugeWidth,
+                        height: mR.properties.linGaugeHeight,
+                        units: "Sound Volume, NotDB",
+                        valueBox: false,
+                        minValue: 0,
+                        maxValue: 100,
+                        majorTicks: [
+                            "0",
+                            "10",
+                            "20",
+                            "30",
+                            "40",
+                            "50",
+                            "60",
+                            "70",
+                            "80",
+                            "90",
+                            "100"
+                        ],
+                        minorTicks: 2,
+                        strokeTicks: true,
+                        highlights: [
+                            {
+                                "from": 90,
+                                "to": 100,
+                                "color": "rgba(200, 50, 50, .75)"
+                            }
+                        ],
+                        colorPlate: "#fff",
+                        borderShadowWidth: 0,
+                        borders: false,
+                        needleType: "arrow",
+                        needleWidth: 2,
+                        animationDuration: 200,
+                        animationRule: "quad",
+                        tickSide: "left",
+                        numberSide: "left",
+                        needleSide: "left",
+                        barStrokeWidth: 7,
+                        barBeginCircle: false
+                    }).draw();
+
+                    mR.properties.freqGauge = new LinearGauge({
+                        renderTo: mR.properties.freqGaugeID,
+                        width: mR.properties.linGaugeWidth,
+                        height: mR.properties.linGaugeHeight,
+                        units: "Sound Freq, Hz",
+                        valueBox: false,
+                        minValue: 0,
+                        maxValue: 7500,
+                        majorTicks: [
+                            "0",
+                            "1000",
+                            "2000",
+                            "3000",
+                            "4000",
+                            "5000",
+                            "6000",
+                            "7000"
+                        ],
+                        minorTicks: 10,
+                        strokeTicks: true,
+                        colorPlate: "#fff",
+                        borderShadowWidth: 0,
+                        borders: false,
+                        barBeginCircle: false,
+                        tickSide: "left",
+                        numberSide: "left",
+                        needleSide: "left",
+                        needleType: "line",
+                        needleWidth: 3,
+                        colorNeedle: "#222",
+                        colorNeedleEnd: "#222",
+                        animationDuration: 200,
+                        animationRule: "quad",
+                        animationTarget: "plate",
+                        barWidth: 5,
+                        ticksWidth: 50,
+                        ticksWidthMinor: 15
+                    }).draw();
 
                     mR.state = "statUpdate";
                 },
@@ -1243,7 +1421,38 @@ const globals = {
                         console.warn("Warning: error getting RPI temp for stats:",e);
                     })
 
+                    SRH.request("/api/stat/cpu").then(cpuInfo => {
+                        mR.properties.rpiCPUGauge.value = cpuInfo.percentUsed;
+                    }).catch(e => {
+                        mR.properties.rpiCPUGauge.value = 0;
+                        console.warn("Warning: error getting RPI cpu usage for stats:",e);
+                    })
+
+                    SRH.request("/api/stat/mem").then(memInfo => {
+                        mR.properties.rpiMemGauge.value = memInfo.percentUsed;
+                    }).catch(e => {
+                        mR.properties.rpiMemGauge.value = 0;
+                        console.warn("Warning: error getting RPI cpu usage for stats:",e);
+                    })
+
+                    SRH.request("/api/ardu/realtime/volume").then(cVol => {
+                        mR.properties.volGauge.value = cVol;
+                    }).catch(e => {
+                        mR.properties.volGauge.value = 0;
+                        console.warn("Warning: error getting ardu volume for stats:",e);
+                    })
+                    SRH.request("/api/ardu/realtime/frequency").then(cFreq => {
+                        mR.properties.freqGauge.value = cFreq;
+                    }).catch(e => {
+                        mR.properties.freqGauge.value = 0;
+                        console.warn("Warning: error getting ardu frequency for stats:",e);
+                    })
+
                     //Add the rest of the gauges here
+
+                    //Update button disabling by synching with server
+                    //TODO make this not in the stat update since it shouldn't really be here but its 5:32AM and I wanna sleep
+                    mR.methods.updateTimerButtonsDisabled()
 
                     mR.state = "waitStatUpdate";
                 },
@@ -1259,17 +1468,71 @@ const globals = {
                             SRH.request("/api/action/kill") //lol die server (but forever should restart it)
                         }
                     })
+                },
+                enableTimers: function() {
+                    SRH.request("/api/light/settings/timersEnabled/on")
+                },
+                disableTimers: function() {
+                    SRH.request("/api/light/settings/timersEnabled/off")
+                },
+                updateTimerButtonsDisabled: function() {
+                    SRH.request("/api/light/settings/timersEnabled").then(enabled => {
+                        let enableButton = document.getElementById(globals.modules.deviceSettingsManager.properties.timersOnButtonID);
+                        let disableButton = document.getElementById(globals.modules.deviceSettingsManager.properties.timersOffButtonID);
+                        if (enabled) {
+                            //!!JANK TODO FIX lol its 6am
+                            if (!enableButton.hasAttribute("disabled")) {
+                                enableButton.setAttribute("disabled", "");
+                                enableButton.className += " disabled";
+                            }
+                            
+                            if (disableButton.hasAttribute("disabled")) {
+                                disableButton.removeAttribute("disabled","");
+                                disableButton.className = disableButton.className.replace(" disabled", "")
+                            }
+                        } else {
+                            if (!disableButton.hasAttribute("disabled")) {
+                                disableButton.setAttribute("disabled", "");
+                                disableButton.className += " disabled";
+                            }
+                            
+                            if (enableButton.hasAttribute("disabled")) {
+                                enableButton.removeAttribute("disabled","");
+                                enableButton.className = enableButton.className.replace(" disabled", "")
+                            }
+                        }
+                    })
+                    .catch(e => {
+                        console.warn("Error getting timer enabled state from server: "+e);
+                    })
                 }
             },
             properties: {
-                gaugeWidth: 300,
+                gaugeWidth: 325,
                 gaugeHeight: 300,
+                linGaugeWidth: 150,
+                linGaugeHeight: 300,
 
                 statUpdateDelay: 1000,
                 statUpdateTimeout: undefined,
 
                 rpiTempStatID: "stats_rpiTemp",
-                rpiTempGauge: undefined
+                rpiTempGauge: undefined,
+
+                rpiCPUStatID: "stats_rpiCpuUsage",
+                rpiCPUGauge: undefined,
+
+                rpiMemStatID: "stats_rpiMemUsage",
+                rpiMemGauge: undefined,
+
+                freqGaugeID: "stats_curAudFreq",
+                freqGauge: undefined,
+
+                volGaugeID: "stats_curAudVol",
+                volGauge: undefined,
+
+                timersOnButtonID: "set_timersOn",
+                timersOffButtonID: "set_timersOff"
             }
         },
         speechManager: {
