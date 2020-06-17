@@ -32,10 +32,27 @@ class timingM {
 			res.on("data", function(chunk) {
 				self.ipAddr = chunk;
 				timingLog("Ip Addr get OK: '"+chunk+"'");
-				self.checkEvents(); //check for outstanding events
+
+				let getFirstUpdate = (timeWait) => {
+					//Start with a single time update
+					self.getReferenceTime().then(time => {
+						self.currentHours = time.hours;
+						self.currentMinutes = time.minutes;
+						self.currentSeconds = time.seconds;
+
+						self.checkEvents(); //check for outstanding events
+					}).catch(e => {
+						console.error("Error: failed to get reference time for timingM e="+e+", trying again in "+timeWait+"ms (exp backoff)");
+						setTimeout(() => {
+							getFirstUpdate(timeWait*2);
+						}, timeWait)
+					})
+				}
+
+				getFirstUpdate(1000);
 			});
 		}).on('error', function(e) {
-			console.error("unable to get IpAddr; exiting (e= "+e.message+")");
+			console.error("unable to get cur IpAddr; exiting (e= "+e.message+")");
 			process.exit(1);
 		});
 
@@ -69,6 +86,38 @@ class timingM {
 		this.trgLevels = level;
 		this.trgDevices = devices;
 		this.enabled = true; //set enabled flag
+
+		this.currentHours = 0;
+		this.currentMinutes = 0;
+		this.currentSeconds = 0;
+
+		let internalTimeUpdateInterv = 1000; //update internal time every x ms
+		let referenceTimeUpdateInterv = 3600*1000; //1 hr update reference time
+
+		setInterval(() => {
+			this.currentSeconds += internalTimeUpdateInterv/1000; //Advance seconds
+            if (this.currentSeconds >= 60) {
+                this.currentSeconds = this.currentSeconds-60;
+                this.currentMinutes++;
+            }
+            if (this.currentMinutes >= 60) {
+                this.currentMinutes = this.currentMinutes-60;
+                this.currentHours++;
+            }
+            if (this.currentHours >= 24) {
+                this.currentHours = this.currentHours-24;
+            }
+		},internalTimeUpdateInterv);
+
+		setInterval(() => {
+			this.getReferenceTime().then(time => {
+				this.currentHours = time.hours;
+				this.currentMinutes = time.minutes;
+				this.currentSeconds = time.seconds;
+			}).catch(e => {
+				console.error("Error: failed to get reference time for timingM e="+e);
+			})
+		}, referenceTimeUpdateInterv);
 
 		this.updateLoop = setInterval(function(){self.checkEvents()},60000); //setup interval handler to check minutes
 	}
@@ -134,7 +183,7 @@ class timingM {
 		return this.enabled;
 	}
 
-	getCurrentTime() {
+	getReferenceTime() {
 		return new Promise((resolve, reject) => {
 			http.get({
 				host: 'worldtimeapi.org',
@@ -142,7 +191,7 @@ class timingM {
 				path: '/api/ip/'+this.ipAddr+'.json'
 			}, function(res) {
 				if (res.statusCode != 200) {
-					console.error("Warning: timer unable to get currentTime");
+					console.warn("Warning: timer unable to get currentTime, statusCode="+res.statusCode);
 					return reject("likely network error");
 				}
 
@@ -164,6 +213,16 @@ class timingM {
 				return reject("likely network error");
 			});
 		});
+	}
+
+	getCurrentTime() {
+		return new Promise((resolve, reject) => {
+			return resolve({
+				hours: this.currentHours,
+				minutes: this.currentMinutes,
+				seconds: this.currentSeconds
+			})
+		})
 	}
 }
 

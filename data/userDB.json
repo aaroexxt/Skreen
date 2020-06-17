@@ -22,7 +22,8 @@
   "passcodes": [
     "$2a$10$W/NG5Fwao7FG0pGw9ip.P.UNjo0jKwJAkbJmdgIqVoOM12SiVtxfS",
     "$2a$10$CM3dZfIAUdk4xBHe7HjUb.bLz9be0k4Qw94n0M64dvRYiFseXb23m",
-    "$2a$10$nXosPotpE5/V6NwPhNOvl.1WqxApB7dNjkQXT.zr7k7iRy1GozQEO"
+    "$2a$10$nXosPotpE5/V6NwPhNOvl.1WqxApB7dNjkQXT.zr7k7iRy1GozQEO",
+    "$2a$10$ZD0N.ahDQHITuAdqhAG.tu6lCPtY5sI9WP3tvpj8BRhLZTsm4t8mq"
   ],
   "passcodeUser": {
     "id":"_internal__passcode",

@@ -5,7 +5,8 @@ body {
     padding: 0.385em;
     font-size: 13px;
     font-family: "Helvetica Neue", "SF Pro Display", "SF Pro Icons", "Helvetica", "Arial", sans-serif !important;
-    overflow-x: hidden;
+    overflow-x: hidden !important;
+    overflow-y: scroll !important;
 }
 hr
 {
@@ -42,7 +43,6 @@ select.sort {
     font-size: 1.308em;
     width: 360px; 
     text-indent: 0.01px; 
-    text-overflow: ""; 
 
     color: #000;
     background-color: #ebebeb;
@@ -93,7 +93,6 @@ button.passcode:hover {
 img.noload {
     background: url("../img/loading.gif") 50% no-repeat !important;
     position: relative;
-    overflow: hidden;
     width: 2.462em;
     height: 2.462em;
     padding: 2.462em 2.462em 0 0;
@@ -105,7 +104,6 @@ img.noload {
 video.noload {
     background: url("../img/loading.gif") 50% no-repeat !important;
     position: relative;
-    overflow: hidden;
     width: 2.462em;
     height: 2.462em;
     padding: 2.462em 2.462em 0 0;
@@ -227,7 +225,6 @@ div.img img {
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
-    overflow: hidden;
     font-family: 'Source Sans Pro';
     padding-top: 10px;
     padding-bottom: 10px;
@@ -249,7 +246,6 @@ div.img img {
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
-    overflow: hidden;
     font-family: 'Source Sans Pro';
 
     /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#aebcbf+0,0a0e0a+0,bebebe+0,ebebeb+50,bebebe+100 */
@@ -268,7 +264,6 @@ div.img img {
     -moz-user-select: none; /* Firefox */
     -ms-user-select: none; /* IE10+/Edge */
     user-select: none; /* Standard */
-    overflow: hidden;
     font-family: 'Source Sans Pro';
 
     /* Permalink - use to edit and share this gradient: http://colorzilla.com/gradient-editor/#aebcbf+0,0a0e0a+0,bebebe+0,ebebeb+50,bebebe+100 */
@@ -446,12 +441,10 @@ img.asep {
 .circle.selected {
     background-color: rgb(150,150,150);
 }
-.fullScreen {
-    position: fixed;
+.menuPage {
+    position: relative;
     width: 100%;
-    height: 100%;
-    left: 0;
-    top: 55px;
+    top: 80px;
 }
 .controlButton {
     margin-top: 5px;

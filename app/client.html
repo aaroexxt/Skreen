@@ -43,7 +43,7 @@
 			</ul>
 
 
-			<div id="mainMusicLights" class="fullScreen" style="display: none">
+			<div id="mainMusicLights" class="menuPage" style="display: none">
 				<center>
 					<h2> Music Lights </h2>
 					<button class="POnButton" onclick="globals.modules.musicLightsManager.methods.lightsOn();">On</button>
@@ -54,7 +54,7 @@
 			  		<button class="PDownButton leftPad" onclick="globals.modules.musicLightsManager.methods.lightMode(2);">2</button>
 				</center>
 			</div>
-			<div id="mainRoomLights" class="fullScreen" style="display: none">
+			<div id="mainRoomLights" class="menuPage" style="display: none">
 				<center>
 					<h2>Room Lights</h2>
 					<h3>Locations:</h3>
@@ -65,18 +65,19 @@
 					<div id="mainRoomLights-devicesContainer"></div>
 				</center>
 			</div>
-			<div id="mainSettings" class="fullScreen" style="display: none">
+			<div id="mainSettings" class="menuPage" style="display: none">
 				<br>
 				<br>
 				<center>
 					<h1>Real-Time Data</h1>
 					<div>
+						<h3>Server</h3>
 						<center>
 							<canvas id="stats_rpiTemp"></canvas>
 							<canvas id="stats_rpiCpuUsage"></canvas>
 							<canvas id="stats_rpiMemUsage"></canvas>
 						</center>
-						<br>
+						<h3>Audio</h3>
 						<center>
 							<canvas id="stats_curAudFreq"></canvas>
 							<canvas id="stats_curAudVol"></canvas>
@@ -108,9 +109,11 @@
 
 					<h2> Advanced Stuff </h2>
 					<button class="POffButton" onclick="globals.modules.deviceSettingsManager.methods.killServer();">Kill Server</button>
+
+					<hr>
 				</center>
 			</div>
-			<div id="mainMusic" class="fullScreen" style="display: none">
+			<div id="mainMusic" class="menuPage" style="display: none">
 				<img width="23.5%" height="45%" style="float: left; margin-left: 1%; margin-top: 1%; border: 2px groove grey;" id="music_trackArt"></img> <!--always 500px by 500px-->
 				<div style="float: left; margin-left: 1%; margin-top: 1%; width: 74%;">
 					<center>

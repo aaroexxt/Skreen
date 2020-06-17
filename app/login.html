@@ -10,9 +10,9 @@
 	<body>
 		<div>
 			<h1 class="logintext">Login To Skreen</h1>
-			<h3 id="attemptNumber">Login attempt: 150 attempts max</h3>
 			<center>
 				<div id="login-passcode" style="display: none;">
+					<h3 style="text-align: left;">Login attempt: 25 attempts max</h3>
 					<span id="login-passcodeField" style="font-size: large; text-decoration: underline"></span>
 					<div>
 						<button class="passcode" onclick="login.passcodeHandles.tracker+='1'; login.passcodeHandles.update();">1</button>
@@ -24,6 +24,7 @@
 						<button class="passcode" onclick="login.passcodeHandles.tracker+='7'; login.passcodeHandles.update();">7</button>
 						<button class="passcode" onclick="login.passcodeHandles.tracker+='8'; login.passcodeHandles.update();">8</button>
 						<button class="passcode" onclick="login.passcodeHandles.tracker+='9'; login.passcodeHandles.update();">9</button>
+						<button class="passcode" onclick="login.passcodeHandles.tracker+='0'; login.passcodeHandles.update();">0</button>
 					</div>
 					<br>
 					<div>
@@ -34,6 +35,7 @@
 					</div>
 				</div>
 				<div id="login-email" style="display: none;">
+					<h3 style="text-align: left;">Login attempt: 15 attempts max</h3>
 					<form action="/login/regular" method="post">
 						Email:
 						<br>
@@ -68,6 +70,20 @@
 					init: function() {
 						login.passcodeHandles.tracker = "";
 						login.passcodeHandles.update();
+
+						document.onkeydown = e => {
+							e = e || window.event;
+
+							if (!isNaN(e.key)) { //check if it's a number
+								login.passcodeHandles.tracker+=e.key;
+								login.passcodeHandles.update();
+							} else if (e.keyCode == 46 || e.keyCode == 8) { //del or backspace key; remove character
+								login.passcodeHandles.tracker = login.passcodeHandles.tracker.substring(0, login.passcodeHandles.tracker.length-1);
+								login.passcodeHandles.update();
+							} else if (e.keyCode == 13) { //enter key; submit
+								login.passcodeHandles.enterPasscode(login.passcodeHandles.tracker);
+							}
+						}
 					},
 					enterPasscode: function(passcode) {
 						console.log("fetch psc called w/psc="+passcode);
@@ -89,6 +105,16 @@
 									login.passcodeHandles.tracker = ' ';
 									login.passcodeHandles.update();
 								},250);
+
+								try {
+									if (typeof response.message !== "undefined") {
+										if (response.message.toLowerCase().indexOf("too many login attempts") > -1) {
+											alert("You've made too many attempts with this login method; server will no longer validate responses and instead give u this annoying error message :)");
+										}
+									}
+								} catch(e) {
+									console.warn("Error serializing non-ok resp from passcode")
+								}
 							}
 						})
 						.catch(error => {

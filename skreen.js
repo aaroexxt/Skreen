@@ -477,6 +477,7 @@ const cors = require('cors');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const CustomStrategy = require('passport-custom').Strategy;
+const passportDebug = false;
 
 const bcrypt = require('bcrypt');
 const jsonDB = require('node-json-db').JsonDB;
@@ -559,7 +560,9 @@ console.log("[AUTH] Init strategies begun");
 passport.use(new LocalStrategy(
   { usernameField: 'name' },
   (name, password, done) => {
-	console.log('Passport localStrategy found, looking up user w/name: '+name+", passwd: "+password);
+	if (passportDebug) {
+		console.log('[PASSPORT] localStrategy found, looking up user w/name: '+name+", passwd: "+password);
+	}
 	try {
 		let allUserData = db.getData("/users/");
 		for (var i=0; i<allUserData.length; i++) {
@@ -580,33 +583,39 @@ passport.use(new LocalStrategy(
 //Use https://www.browserling.com/tools/bcrypt to add passcodes
 passport.use('passcode', new CustomStrategy( function(req, done) {
 	if (typeof req.body.passcode !== "undefined") {
-		//console.log("psc entered="+req.body.passcode);
+		if (passportDebug) {
+			console.log("[PASSPORT] psc entered="+req.body.passcode+", now checking");
+		}
 		let passcodes = db.getData("/passcodes/");
 		let pscUser = db.getData("/passcodeUser/");
+		req.body.passcode = String(req.body.passcode).trim(); //jank fix but it worko
 		for (var i=0; i<passcodes.length; i++) {
 			if (bcrypt.compareSync(String(req.body.passcode), passcodes[i])) {
-				req.session.passcodeAttemptNumber = 0;
 				return done(null, pscUser);
 			}
 		}
-		req.session.passcodeAttemptNumber++;
 		return done(null, false, { message: 'Passcode invalid.\n' });
 	} else {
-		req.session.passcodeAttemptNumber++;
-		console.log("no psc entered?");
+		if (passportDebug) {
+			console.log("[PASSPORT] no psc entered?");
+		}
 		return done(null, false, { message: 'No passcode entered\n' });
 	}
 }));
 
 //User serialization and deserialization
 passport.serializeUser((user, done) => {
-	console.log("Serializing user with id: "+user.id);
+	if (passportDebug) {
+		console.log("[PASSPORT] Serializing user with id: "+user.id);
+	}
 	done(null, user.id);
 });
 
 passport.deserializeUser((id, done) => {
-	console.log("Deserializing user with id: "+id);
-	  try {
+	if (passportDebug) {
+		console.log("[PASSPORT] Deserializing user with id: "+id);
+	}
+	try {
 	  	let pscUser = db.getData("/passcodeUser/");
 	  	if (id == pscUser.id) {
 	  		return done(null, pscUser);
@@ -629,28 +638,8 @@ passport.deserializeUser((id, done) => {
 INIT ROUTES
 *****/
 
-app.use(function(req, res, next) { //default listener that sets session values
-	//Ensure that session stores passcode attempts
-	if (!req.session.passcodeAttemptNumber) {
-		req.session.passcodeAttemptNumber = 0;
-	}
-	if (!req.session.regularAttemptNumber) {
-		req.session.regularAttemptNumber = 0;
-	}
-
-	if (req.session.regularAttemptNumber > runtimeSettings.maxRegularAttempts || req.session.passcodeAttemptNumber > runtimeSettings.maxPasscodeAttempts) {
-		return res.end(401, RequestHandler.FAILURE("Error: too many attempts"));
-	} else {
-		next();
-	}
-});
-
 //MAIN ROUTES
 app.get("/client", function(req, res, next) { //Skreen main route
-	console.log(JSON.stringify(req.session)+" session");
-
-	console.log('Inside GET /authrequired callback')
-	console.log(`User authenticated? ${req.isAuthenticated()}`)
 	if (req.isAuthenticated() || runtimeSettings.disableLogin) {
 		fs.readFile(path.join(cwd,runtimeSettings.defaultFileDirectory,runtimeSettings.defaultClientFile), function (err, buf) {
 			if (err) {
@@ -666,11 +655,9 @@ app.get("/client", function(req, res, next) { //Skreen main route
 });
 
 app.get('/login', (req, res) => {
-    console.log('Inside GET request on /login, sessID: '+req.sessionID);
     if (req.isAuthenticated() || runtimeSettings.disableLogin) {
         res.redirect("/client");
     } else {
-		console.log('Inside GET /login callback')
 		fs.readFile(path.join(cwd,runtimeSettings.defaultFileDirectory,runtimeSettings.defaultLoginFile), function (err, buf) {
 			if (err) {
 				next(err); //pass err to express
@@ -684,45 +671,89 @@ app.get('/login', (req, res) => {
 
 //AUTH ROUTES
 AUTHrouter.post('/regular', (req, res, next) => {
-    console.log('Inside POST request on /loginRegular, sessID: '+req.sessionID)
-    passport.authenticate('local', (err, user, info) => {
-        if(info) {req.session.regularAttemptNumber++; return res.send(RequestHandler.FAILURE(info.message))}
-        if (err) {req.session.regularAttemptNumber++; return next(err); }
-        if (!user) { return res.redirect('/login'); }
-        req.session.regularAttemptNumber = 0;
-        req.login(user, (err) => {
-          if (err) { return next(err); }
-          console.log("You were authenticated :)")
-          return res.end(RequestHandler.SUCCESS());
-        });
-    })(req, res, next);
-});
-AUTHrouter.get('/regular', (req, res, next) => {
-	res.redirect("/client");
+	if (!req.session.regularAttemptNumber) {
+		req.session.regularAttemptNumber = 0;
+	}
+    if (req.session.regularAttemptNumber >= runtimeSettings.maxRegularAttempts) { //-1 to fix off by one
+    	if (passportDebug) {
+    		console.log("[PASSPORT] regular attempt maxOut@ att#="+req.session.regularAttemptNumber);
+    	}
+		return res.end(RequestHandler.FAILURE("Too many login attempts w/mode=Regular"))
+	} else { //Ok we don't have too many attempts so actually check now
+		passport.authenticate('local', (err, user, info) => {
+	    	//Check for error or info conditions
+	        if (info) {
+	        	req.session.regularAttemptNumber++;
+	        	return res.send(RequestHandler.FAILURE(info.message))
+	        }
+	        if (err) {
+	        	req.session.regularAttemptNumber++;
+	        	return next(err);
+	        }
+	        if (!user) {
+	        	return res.redirect('/login');
+	        }
+	        //Basic validity checks passed, pass login
+	        req.login(user, (err) => {
+				if (err) {
+					return next(err);
+				}
+				if (passportDebug) {
+					console.log("[PASSPORT] You were authenticated :)");
+				}
+				//Reset attempts
+				req.session.regularAttemptNumber = 0;
+				req.session.passcodeAttemptNumber = 0;
+				return res.end(RequestHandler.SUCCESS());
+	        });
+	    })(req, res, next);
+	}
 });
 
 AUTHrouter.post('/passcode', bodyParser.json(), (req, res, next) => {
-    console.log('Inside POST request on /loginPasscode, sessID: '+req.sessionID)
-    passport.authenticate('passcode', (err, user, info) => {
-        if(info) {return res.send(RequestHandler.FAILURE(info.message))}
-        if (err) { return next(err); }
-        if (!user) { return res.redirect('/login'); }
-        req.login(user, (err) => {
-          if (err) { return next(err); }
-          console.log("You were authenticated :)");
-          //return res.redirect('/authrequired');
-          return res.end(RequestHandler.SUCCESS());
-        })
-    })(req, res, next);
-});
-AUTHrouter.get('/passcode', (req, res, next) => {
-	res.redirect("/client");
+	if (!req.session.passcodeAttemptNumber) {
+		req.session.passcodeAttemptNumber = 0;
+	}
+	if (req.session.passcodeAttemptNumber >= runtimeSettings.maxPasscodeAttempts) { //-1 to fix off by one
+		if (passportDebug) {
+			console.log("[PASSPORT] passcode attempt maxOut@ att#="+req.session.passcodeAttemptNumber);
+		}
+		return res.end(RequestHandler.FAILURE("Too many login attempts w/mode=Passcode"))
+	} else { //Ok we don't have too many attempts so actually check now
+	    passport.authenticate('passcode', (err, user, info) => {
+	        if (info) {
+	        	req.session.passcodeAttemptNumber++;
+	        	return res.send(RequestHandler.FAILURE(info.message))
+	        }
+	        if (err) {
+	        	req.session.passcodeAttemptNumber++;
+	        	return next(err);
+	        }
+	        if (!user) {
+	        	return res.redirect('/login');
+	        }
+	        req.login(user, (err) => {
+				if (err) {
+					return next(err);
+				}
+				if (passportDebug) {
+					console.log("[PASSPORT] You were authenticated :)");
+				}
+	          	//Reset attempts
+				req.session.regularAttemptNumber = 0;
+				req.session.passcodeAttemptNumber = 0;
+	         	return res.end(RequestHandler.SUCCESS());
+	        })
+	    })(req, res, next);
+	}
 });
 
 //API ROUTES
 APIrouter.use(function(req, res, next) { //Middleware to check whether the user is authenticated
-	//console.log("API endpoint targeted; checking authentication...");
-	if(req.isAuthenticated() || runtimeSettings.disableLogin) {
+	if (passportDebug) {
+		console.log("API endpoint targeted; checking authentication...");
+	}
+	if (req.isAuthenticated() || runtimeSettings.disableLogin) {
 		next();
 	} else {
 		return res.status(401).end(RequestHandler.FAILURE("Error: Not authenticated to make API request to APIRouter"));
@@ -738,9 +769,16 @@ APIrouter.get("/runtime", function(req, res) {
 });
 APIrouter.get("/session", function(req, res) {
 	let authenticated = req.isAuthenticated();
-	let sessionAttemptsData = {"passcode": req.session.passcodeAttemptNumber, "regular": req.session.regularAttemptNumber};
+	let sessionAttemptsData = {
+		"passcode": req.session.passcodeAttemptNumber,
+		"regular": req.session.regularAttemptNumber
+	}
 	let id = req.sessionID;
-	return res.end(RequestHandler.SUCCESS({authenticated: authenticated || false, id: id || -1, attempts: sessionAttemptsData}));
+	return res.end(RequestHandler.SUCCESS({
+		authenticated: authenticated || false,
+		id: id || -1,
+		attempts: sessionAttemptsData
+	}));
 });
 APIrouter.get("/speech/:data", function(req, res) {
 	try {
@@ -888,6 +926,51 @@ STATrouter.get("/mem", function(req, res) {
 		return res.end(RequestHandler.FAILURE(e));
 	})
 });
+STATrouter.get("/all", function(req, res) {
+	//ooh let's use pAralLeLiZaTioN
+	var memCompleted = false;
+	var memInfo;
+	RPIgetMemoryInfo().then(memInfoInternal => {
+		memInfo = memInfoInternal;
+		memCompleted = true;
+		finishedCB();
+	}).catch(e => {
+		memCompleted = true;
+		finishedCB();
+	});
+
+	var cpuCompleted = false;
+	var cpuInfo;
+	RPIgetCPUInfo().then(cpuInfoInternal => {
+		cpuInfo = cpuInfoInternal;
+		cpuCompleted = true;
+		finishedCB();
+	}).catch(e => {
+		cpuCompleted = true;
+		finishedCB();
+	});
+
+	var tempCompleted = false;
+	var tempInfo;
+	RPIgetTempInfo().then(tempInfoInternal => {
+		tempInfo = tempInfoInternal;
+		tempCompleted = true;
+		finishedCB();
+	}).catch(e => {
+		tempCompleted = true;
+		finishedCB();
+	});
+
+	let finishedCB = () => {
+		if (memCompleted && cpuCompleted && tempCompleted) {
+			res.end(RequestHandler.SUCCESS({ //may return undefines if a check failed but that's ok because it's dealt with client side lol
+				"memInfo": memInfo,
+				"cpuInfo": cpuInfo || false,
+				"temp": tempInfo || false
+			}));
+		}
+	}
+})
 
 //QuickMode Routes
 //QMrouter.get("/quickMode/list")
@@ -1221,8 +1304,8 @@ APIrouter.use('/light/', LIGHTSrouter);
 APIrouter.use('/SC', SCrouter); //connect soundcloud router to api
 
 //Any 404 
-app.get("*", (req, res) => {
-	res.redirect("/client");
+app.get("*", function(req, res) {
+	return res.redirect("/client");
 });
 
 console.log("[AUTH] Init server begun");

@@ -215,6 +215,12 @@ const globals = {
                     for (var i=0; i<loaders.length; i++) {
                         loaders[i].style.display = "none";
                     }
+
+                    //Fix for making buttons work for iphones and other touch devices w/o a ton more html
+                    var buttons = document.getElementsByClassName("button");
+                    for (let i=0; i<buttons.length; i++) {
+                        buttons[i].ontouchstart = buttons[i].onclick;
+                    }
                     document.getElementById(moduleReference.properties.mainElementName).style.display = "block";
                 }
             },
@@ -455,7 +461,7 @@ const globals = {
                     clearInterval(mR.properties.trackDataUpdateTimeout);
                     mR.properties.trackDataUpdateTimeout = setTimeout( () => {
                         mR.state = "trackDataUpdate";
-                    }, 200);
+                    }, mR.properties.trackDataUpdateDelay);
                 },
                 changeSoundcloudUser: function() {
                     let mR = globals.modules.music;
@@ -529,6 +535,8 @@ const globals = {
 
                 trackDataUpdateTimeout: 0,
                 oldSettingsData: {},
+
+                trackDataUpdateDelay: 500,
 
 
                 playingTrack: false,
@@ -847,18 +855,18 @@ const globals = {
                         let upButton = document.createElement("button");
                         upButton.className = "PUpButton";
                         upButton.onclick = function() {
-                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], 25));
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], 10));
                         }
-                        let upButtonText = document.createTextNode("Up 25%");
+                        let upButtonText = document.createTextNode("Up 10%");
                         upButton.appendChild(upButtonText);
 
                         //Part 3: create down button
                         let downButton = document.createElement("button");
                         downButton.className = "PDownButton leftPad";
                         downButton.onclick = function() {
-                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], -25));
+                            mR.methods.domDisableOnPromise(this, mR.methods.deltaLocationValue(locKeys[i], -10));
                         }
-                        let downButtonText = document.createTextNode("Down 25%");
+                        let downButtonText = document.createTextNode("Down 10%");
                         downButton.appendChild(downButtonText);
 
                         //Part 4: create on button
@@ -1157,7 +1165,7 @@ const globals = {
         },
         deviceSettingsManager: {
             moduleName: "deviceSettingsManager",
-            debugMode: true,
+            debugMode: false,
 
             //STATE MACHINE LOGIC
             realState: "uninit",
@@ -1414,25 +1422,37 @@ const globals = {
                     mR.state = "statUpdate";
                 },
                 statUpdate: function(mR) {
-                    SRH.request("/api/stat/temp").then(temp => {
-                        mR.properties.rpiTempGauge.value = temp;
-                    }).catch(e => {
-                        mR.properties.rpiTempGauge.value = 0;
-                        console.warn("Warning: error getting RPI temp for stats:",e);
-                    })
+                    SRH.request("/api/stat/all").then(resp => {
+                        let memInfo, cpuInfo, temp;
+                        try {
+                            memInfo = resp.memInfo;
+                            cpuInfo = resp.cpuInfo;
+                            temp = resp.temp;
+                        } catch(e) {
+                            console.warn("Error serializing stat response ("+e+"); returning");
+                            return;
+                        }
 
-                    SRH.request("/api/stat/cpu").then(cpuInfo => {
-                        mR.properties.rpiCPUGauge.value = cpuInfo.percentUsed;
-                    }).catch(e => {
-                        mR.properties.rpiCPUGauge.value = 0;
-                        console.warn("Warning: error getting RPI cpu usage for stats:",e);
-                    })
+                        try {
+                            mR.properties.rpiTempGauge.value = temp;
+                        } catch(e) {
+                            mR.properties.rpiTempGauge.value = 0;
+                            console.warn("Warning: error getting RPI temp for stats:",e);
+                        }
 
-                    SRH.request("/api/stat/mem").then(memInfo => {
-                        mR.properties.rpiMemGauge.value = memInfo.percentUsed;
-                    }).catch(e => {
-                        mR.properties.rpiMemGauge.value = 0;
-                        console.warn("Warning: error getting RPI cpu usage for stats:",e);
+                        try {
+                            mR.properties.rpiCPUGauge.value = cpuInfo.percentUsed;
+                        } catch(e) {
+                            mR.properties.rpiCPUGauge.value = 0;
+                            console.warn("Warning: error getting RPI cpu usage for stats:",e);
+                        }
+
+                        try {
+                             mR.properties.rpiMemGauge.value = memInfo.percentUsed;
+                        } catch(e) {
+                            mR.properties.rpiMemGauge.value = 0;
+                            console.warn("Warning: error getting RPI mem usage for stats:",e);
+                        }
                     })
 
                     SRH.request("/api/ardu/realtime/volume").then(cVol => {
@@ -1668,7 +1688,7 @@ const globals = {
                 }
             },
             properties: {
-                timeIndicatorGetReferenceTimeDelay: 3600*1000, //get new reference from server every hour
+                timeIndicatorGetReferenceTimeDelay: 600*1000, //get new reference from server every 10min
                 timeIndicatorUpdateTime: 1000,
                 timeIndicatorElement: "time",
 

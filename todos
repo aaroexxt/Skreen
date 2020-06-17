@@ -1,24 +1,11 @@
 Todos:
 
 - quick modes button
-- make login path for phone
-- make random http request attempt redirect to main client file
-- make the settings page on main client file have something or remove it
-	- what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
-- fix login attempt tracking
+- make easier to use login path for phone
+-Settings page what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - speech commands!! annyang? (replace Temp?F on client)
-- store local settings so server resume is smooth
-- fadeout effect on menu change client side
-- Can type passcode with number keys + enter
 - track length of airplay track broadcast to client
 - volSet path
-- instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
-- make my own custom version of nodetunes that implements https://github.com/stephen/nodetunes pull requests
-- if arduino crashes try to restart every x ms
-- make buttons bigger on music and lights
-- make buttons update and disable (like timer button)
-- lightmode "presets" which will set light or room combos to certain predetermined levels
-- builtin delta method for lightmode instead of calcualting it on client side
 
 done:
 
@@ -41,3 +28,18 @@ done:
 - rpi status with memory usage
 - add a switch for timer on/off
 - display current volume/freq on scale main client page
+- Can type passcode with number keys + enter
+- make the settings page on main client file have something or remove it
+- make random http request attempt redirect to main client file
+- make buttons bigger on music and lights
+- make all stats one path
+- move time prediction api stuff to server side
+- fix login attempt tracking
+
+longShot stuff:
+- instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
+- make my own custom version of nodetunes that implements https://github.com/stephen/nodetunes pull requests
+- if arduino crashes try to restart every x ms
+- make buttons update and disable (like timer button)
+- make stats stuff only transmit when visible same w updating button visibility
+- store local settings so server resume is smooth

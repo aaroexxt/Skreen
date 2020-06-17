@@ -9,8 +9,9 @@
         "arduinoConnected": false
     },
     "settings": {
-        "maxLoginAttempts": 10,
-        "disableLogin": true,
+        "disableLogin": false,
+        "maxRegularAttempts": 15,
+        "maxPasscodeAttempts": 5,
 
         "faviconDirectory": "/app/assets/images/favicon.ico",
         "defaultFileDirectory": "/app",
@@ -28,17 +29,14 @@
 
         "arduinoBaudRate": 9600,
         "portCheckDataTimeout": 4000,
-        "arduinoCommandTimeout": 5000,
+        "arduinoCommandTimeout": 3000,
         "arduinoOKCommand": "ex",
         "arduinoSendCommandInterval": 250,
         "arduinoCheckPresentInterval": 60000,
 
         "jsonDBPath": "data/userDB.json",
 
-        "serverPort": 80,
-
-        "maxRegularAttempts": 100,
-        "maxPasscodeAttempts": 50
+        "serverPort": 80
     },
     "soundcloudSettings": {
         "clientID": "3425f0db5f4339b4edbef6afeeb23264",
