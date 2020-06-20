@@ -182,6 +182,9 @@ div.inforight {
     padding-right: 1em !important;
   }
 }
+.nobr {
+    white-space: nowrap;
+}
 .title2 {
     font-size: 2.692em;
     text-align: center;

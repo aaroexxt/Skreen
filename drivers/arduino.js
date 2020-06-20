@@ -23,7 +23,7 @@ var arduinoUtilities = {
     extInformation: {},
 
     existenceCheckPresent: false,
-    arduinoExists: false,
+    arduinoConnected: false,
 
     init: function(eRuntimeSettings, eRuntimeInformation) {
         return new Promise((resolve, reject) => {
@@ -89,6 +89,7 @@ var arduinoUtilities = {
                                         if (arduinoUtilities.debugMode) {
                                             console.log("[ARDUINO] found port: "+curPortID);
                                         }
+                                        arduinoUtilities.arduinoConnected = true;
                                         return resolve(curPortID);
                                     } else {
                                         if (arduinoUtilities.debugMode) {
@@ -192,11 +193,13 @@ var arduinoUtilities = {
                             console.log("[ARDUINO] existence testing finished; arduino passed existence check");
                         }
                         runtimeInfo.arduinoConnected = true;
+                        arduinoUtilities.arduinoConnected = true;
                     }).catch(err => {
                         if (arduinoUtilities.debugMode) {
                             console.log("[ARDUINO] existence testing failed; Arduino disconnected");
                         }
                         runtimeInfo.arduinoConnected = false;
+                        arduinoUtilities.arduinoConnected = false;
                     });
 
                 }, arduinoUtilities.extSettings.arduinoCheckPresentInterval);

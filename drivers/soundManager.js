@@ -408,6 +408,19 @@ const SoundManagerV2 = {
                             _this.airplayPipeline.volumeTweak.setVolume(nMap(newVolume, 0, 100, _this.pcm_MINVOLUME, _this.pcm_MAXVOLUME));
                             //set for both airplay and regular track audio
                             break;
+                        case "volumeSet":
+                            if (typeof ev.data == "undefined") {
+                                return reject("VolumeSet event with no volume parameter passed in");
+                            } else {
+                                if (isNaN(ev.data)) {
+                                    return reject("VolumeSet new volume is not a valid number");
+                                } else {
+                                    let newVolume = (ev.data>100) ? 100 : (ev.data<0) ? 0 : ev.data;
+                                    _this.trackAudioController.setVolume(newVolume);
+                                    _this.airplayPipeline.volumeTweak.setVolume(nMap(newVolume, 0, 100, _this.pcm_MINVOLUME, _this.pcm_MAXVOLUME));
+                                }
+                            }
+                            break;
                         case "trackForward":
                             let internalForward = (ev.origin.indexOf("internal") > -1);
                             if (soundcloud.localSoundcloudSettings.nextTrackLoop && internalForward) { //the track is looping, play it again

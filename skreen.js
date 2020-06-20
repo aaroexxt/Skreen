@@ -438,7 +438,7 @@ timing.enableTimers(); //by default, enable the timers
 --I14-- REALTIME DATA INIT CODE --I14--
 ***************************************/
 
-const {RPIgetCPUInfo, RPIgetMemoryInfo, RPIgetTempInfo} = require("./drivers/rpiStats.js"); //require it in oneliner
+const {RPIgetCPUInfo, RPIgetMemoryInfo, RPIgetTempInfo, RPIgetUptimeInfo} = require("./drivers/rpiStats.js"); //require it in oneliner
 
 
 /***************************************
@@ -926,6 +926,22 @@ STATrouter.get("/mem", function(req, res) {
 		return res.end(RequestHandler.FAILURE(e));
 	})
 });
+STATrouter.get("/uptime", function(req, res) {
+	RPIgetUptimeInfo().then(uptimeInfo => {
+		return res.end(RequestHandler.SUCCESS(uptimeInfo));
+	}).catch(e => {
+		return res.end(RequestHandler.FAILURE(e));
+	})
+});
+STATrouter.get("/devicesStatus", function(req, res) {
+	return res.end(RequestHandler.SUCCESS({
+		arduinoConnected: arduinoUtils.arduinoConnected,
+		serverConnected: true,
+		lutronConnected: hub.connectionStatus.connected,
+		lutronLoginOK: hub.connectionStatus.login
+	}));
+});
+
 STATrouter.get("/all", function(req, res) {
 	//ooh let's use pAralLeLiZaTioN
 	var memCompleted = false;
@@ -961,12 +977,30 @@ STATrouter.get("/all", function(req, res) {
 		finishedCB();
 	});
 
+	var uptimeCompleted = false;
+	var uptimeInfo;
+	RPIgetUptimeInfo().then(uptimeInfoInternal => {
+		uptimeInfo = uptimeInfoInternal;
+		uptimeCompleted = true;
+		finishedCB();
+	}).catch(e => {
+		uptimeCompleted = true;
+		finishedCB();
+	});
+
 	let finishedCB = () => {
-		if (memCompleted && cpuCompleted && tempCompleted) {
-			res.end(RequestHandler.SUCCESS({ //may return undefines if a check failed but that's ok because it's dealt with client side lol
+		if (memCompleted && cpuCompleted && tempCompleted && uptimeCompleted) {
+			res.end(RequestHandler.SUCCESS({ //values may be undefined if a check failed but that's ok because it's dealt with client side lol
 				"memInfo": memInfo,
-				"cpuInfo": cpuInfo || false,
-				"temp": tempInfo || false
+				"uptimeInfo": uptimeInfo,
+				"cpuInfo": cpuInfo,
+				"temp": tempInfo,
+				"devicesStatus": {
+					arduinoConnected: arduinoUtils.arduinoConnected,
+					serverConnected: true,
+					lutronConnected: hub.connectionStatus.connected,
+					lutronLoginOK: hub.connectionStatus.login
+				}
 			}));
 		}
 	}

@@ -4,8 +4,6 @@ Todos:
 - make easier to use login path for phone
 -Settings page what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - speech commands!! annyang? (replace Temp?F on client)
-- track length of airplay track broadcast to client
-- volSet path
 
 done:
 
@@ -35,6 +33,8 @@ done:
 - make all stats one path
 - move time prediction api stuff to server side
 - fix login attempt tracking
+- add uptime metric
+- volSet path
 
 longShot stuff:
 - instead of soundmanager minimum event timeouts, use commandQueue for soundmanager requests
@@ -43,3 +43,4 @@ longShot stuff:
 - make buttons update and disable (like timer button)
 - make stats stuff only transmit when visible same w updating button visibility
 - store local settings so server resume is smooth
+- track length of airplay track broadcast to client

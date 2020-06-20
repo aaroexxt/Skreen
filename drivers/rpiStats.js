@@ -11,6 +11,7 @@
 
 const fs = require('fs');
 const spawn = require("child_process").spawn;
+const os = require('os');
 
 var memInfo = {};
 var tempInfo = {};
@@ -98,9 +99,36 @@ const getTempInfo = () => {
   })
 }
 
+const toHHMMSS = function(num) {
+    var sec_num = parseInt(num, 10); // don't forget the second param
+    var hours   = Math.floor(sec_num / 3600);
+    var minutes = Math.floor((sec_num - (hours * 3600)) / 60);
+    var seconds = sec_num - (hours * 3600) - (minutes * 60);
+
+    if (hours   < 10) {hours   = "0"+hours;}
+    if (minutes < 10) {minutes = "0"+minutes;}
+    if (seconds < 10) {seconds = "0"+seconds;}
+    var time    = hours+':'+minutes+':'+seconds;
+    return time;
+}
+
+const getUptimeInfo = () => {
+  return new Promise((resolve, reject) => {
+    let procUptime = process.uptime();
+    let osUptime = os.uptime();
+    return resolve({
+      procUptime: procUptime,
+      osUptime: osUptime,
+      formattedProcUptime: toHHMMSS(procUptime),
+      formattedOsUptime: toHHMMSS(osUptime)
+    })
+  })
+}
+
 
 module.exports = {
   RPIgetCPUInfo: getCPUInfo,
   RPIgetMemoryInfo: getMemoryInfo,
-  RPIgetTempInfo: getTempInfo
+  RPIgetTempInfo: getTempInfo,
+  RPIgetUptimeInfo: getUptimeInfo
 }

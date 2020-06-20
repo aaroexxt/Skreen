@@ -1423,11 +1423,13 @@ const globals = {
                 },
                 statUpdate: function(mR) {
                     SRH.request("/api/stat/all").then(resp => {
-                        let memInfo, cpuInfo, temp;
+                        let memInfo, cpuInfo, temp, uptimeInfo, devicesStatus;
                         try {
                             memInfo = resp.memInfo;
                             cpuInfo = resp.cpuInfo;
                             temp = resp.temp;
+                            uptimeInfo = resp.uptimeInfo;
+                            devicesStatus = resp.devicesStatus;
                         } catch(e) {
                             console.warn("Error serializing stat response ("+e+"); returning");
                             return;
@@ -1452,6 +1454,30 @@ const globals = {
                         } catch(e) {
                             mR.properties.rpiMemGauge.value = 0;
                             console.warn("Warning: error getting RPI mem usage for stats:",e);
+                        }
+
+                        let procUElem = document.getElementById(mR.properties.processUptimeElemID);
+                        let osUElem = document.getElementById(mR.properties.osUptimeElemID);
+                        try {
+                            procUElem.innerHTML = "Process Uptime: "+uptimeInfo.formattedProcUptime;
+                            osUElem.innerHTML = "System Uptime: "+uptimeInfo.formattedOsUptime;
+                        } catch(e) {
+                            procUElem.innerHTML = "Process Uptime: Error";
+                            osUElem.innerHTML = "System Uptime: Error";
+                            console.warn("Warning: error getting RPI uptime for stats:",e);
+                        }
+
+                        try {
+                            document.getElementById(mR.properties.serverConnectedElemID).src = devicesStatus.serverConnected ? mR.properties.imageCheckPath : mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.arduinoConnectedElemID).src = devicesStatus.arduinoConnected ? mR.properties.imageCheckPath : mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.lutronConnectedElemID).src = devicesStatus.lutronConnected ? mR.properties.imageCheckPath : mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.lutronLoginElemID).src = devicesStatus.lutronLoginOK ? mR.properties.imageCheckPath : mR.properties.imageNoCheckPath;
+                        } catch(e) {
+                            document.getElementById(mR.properties.serverConnectedElemID).src = mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.arduinoConnectedElemID).src = mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.lutronConnectedElemID).src = mR.properties.imageNoCheckPath;
+                            document.getElementById(mR.properties.lutronLoginElemID).src = mR.properties.imageNoCheckPath;
+                            console.warn("Warning: error getting RPI device connection status for stats:",e);
                         }
                     })
 
@@ -1552,7 +1578,17 @@ const globals = {
                 volGauge: undefined,
 
                 timersOnButtonID: "set_timersOn",
-                timersOffButtonID: "set_timersOff"
+                timersOffButtonID: "set_timersOff",
+
+                processUptimeElemID: "stats_curProcUptime",
+                osUptimeElemID: "stats_curOsUptime",
+
+                imageCheckPath: "/images/check.png",
+                imageNoCheckPath: "/images/nocheck.png",
+                serverConnectedElemID: "stats_connServer",
+                arduinoConnectedElemID: "stats_connArduino",
+                lutronConnectedElemID: "stats_connLutron",
+                lutronLoginElemID: "stats_loginLutron"
             }
         },
         speechManager: {
