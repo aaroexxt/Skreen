@@ -25,7 +25,7 @@ int freqBuffer[frequencyBufferSize];
 int freqProcBuffer[frequencyBufferSize];
 int fbIndex = 0;
 
-const int volumeBufferSize = 40; //Taken in 10ms increments
+const int volumeBufferSize = 30; //Taken in 10ms increments
 int volBuffer[volumeBufferSize];
 int volProcBuffer[frequencyBufferSize]; //Dw about why its fBuf
 int vbIndex = 0;
@@ -78,8 +78,14 @@ String serInput = "";
 
 
 //State variables
-boolean ledsOn = false;
+boolean musicLedsOn = false;
+boolean colorLedsOn = false;
 int ledMode = 1;
+int fixedR = 0;
+int fixedG = 0;
+int fixedB = 0;
+
+float brightnessMult = 1.00;
 float brightnessMin = 0.17;
 
 void debugPrintln(char *s) {
@@ -283,9 +289,9 @@ void loop() {
   Serial.println(avgProcessedVolume);
   */
 
-  if (ledsOn) {
+  if (musicLedsOn) {
     RGBColor nc = pitchConv(avgProcessedFreq, avgProcessedVolume);
-    CRGB ncRGB = CRGB(nc.r, nc.g, nc.b);
+    CRGB ncRGB = CRGB((float)nc.r*brightnessMult, (float)nc.g*brightnessMult, (float)nc.b*brightnessMult);
     
     if (DEBUGMODE) {
       printRGBColor(nc);
@@ -309,11 +315,27 @@ void loop() {
         }
         break;
     }
-
-    
-    FastLED.show();
-    delay(1);
+  } else if (colorLedsOn) {
+    switch (ledMode) {
+      case 1:
+        CRGB ncRGB = CRGB((float)fixedR*brightnessMult, (float)fixedG*brightnessMult, (float)fixedB*brightnessMult);
+        for (int i=0; i<NUM_LEDS; i++) {
+          leds[i] = ncRGB;
+        }
+        break;
+      case 2:
+        fill_rainbow(leds, NUM_LEDS, millis()/10, 7);
+          
+        /*for (int i=0; i<NUM_LEDS; i++) {
+          leds[i].r *= brightnessMult;
+          leds[i].g *= brightnessMult;
+          leds[i].b *= brightnessMult;
+        }*/
+        break;
+    }
   }
+
+  FastLED.show();
 }
 
 void processCommand(String input) {
@@ -334,21 +356,65 @@ void processCommand(String input) {
 
     command.toLowerCase(); //conv command to lowercase
 
+    //Debug mode
     if (command.equals("di")) {
       DEBUGMODE = true;
       Serial.print("DEBUG|true;");
     } else if (command.equals("do")) {
       DEBUGMODE = false;
       Serial.print("DEBUG|false;");
+    //Music light mode on/off
     } else if (command.equals("li")) {
-      ledsOn = true;
-      Serial.print("LEDS|true;");
+      colorLedsOn = false;
+      musicLedsOn = true;
+      Serial.print("MLEDS|true;");
     } else if (command.equals("lo")) {
-      ledsOn = false;
-      Serial.print("LEDS|false;");
+      musicLedsOn = false;
+      Serial.print("MLEDS|false;");
       clearLEDS();
+    //Color light mode on/off
+    } else if (command.equals("cli")) {
+      musicLedsOn = false;
+      colorLedsOn = true;
+      Serial.print("CLEDS|true;");
+    } else if (command.equals("clo")) {
+      colorLedsOn = false;
+      Serial.print("CLEDS|false;");
+      clearLEDS();
+    //Color light R/G/B channel commands
+    } else if (command.equals("cr")) {
+      int v = value.toInt();
+      Serial.print("CR|");
+      if (v >= 0 && v <= 255) {
+        fixedR = v;
+        Serial.print(v);
+      } else {
+        Serial.print("E");
+      }
+      Serial.print(";");
+    } else if (command.equals("cg")) {
+      int v = value.toInt();
+      Serial.print("CG|");
+      if (v >= 0 && v <= 255) {
+        fixedG = v;
+        Serial.print(v);
+      } else {
+        Serial.print("E");
+      }
+      Serial.print(";");
+    } else if (command.equals("cb")) {
+      int v = value.toInt();
+      Serial.print("CB|");
+      if (v >= 0 && v <= 255) {
+        fixedB = v;
+        Serial.print(v);
+      } else {
+        Serial.print("E");
+      }
+      Serial.print(";");
     } else if (command.equals("ex")) {
       Serial.print("EXIST|true;");
+    //Set brightness minimum cutoff value
     } else if (command.equals("vm")) {
       Serial.print("VM|");
       float valueConv = value.toFloat();
@@ -358,6 +424,7 @@ void processCommand(String input) {
         Serial.print(value);
       }
       Serial.print(";");
+    //LedMode for music/color lights
     } else if (command.equals("lm")) {
       Serial.print("LM|");
       int v = value.toInt();
@@ -369,19 +436,33 @@ void processCommand(String input) {
         Serial.print("E");
       }
       Serial.print(";");
+    //LEDS to update at a single time
     } else if (command.equals("ul")) {
       Serial.print("UL|");
       updateLEDS = value.toInt();
       Serial.print(updateLEDS);
       Serial.print(";");
+    //Set brightness multiplier
+    } else if (command.equals("bm")) {
+      Serial.print("BM|");
+      int v = value.toInt();
+      if (v >= 0 && v <= 100) {
+        brightnessMult = (float)v/100.0; //scale it down
+        Serial.print(v);
+      } else {
+        Serial.print("E");
+      }
+      Serial.print(";");
+    //Get current volume/current freq
     } else if (command.equals("cv")) {
-      Serial.print("CURRENT_VOLUME|");
+      Serial.print("CV|");
       Serial.print(avgProcessedVolume);
       Serial.print(";");
     } else if (command.equals("cf")) {
-      Serial.print("CURRENT_FREQUENCY|");
+      Serial.print("CF|");
       Serial.print(avgProcessedFreq);
       Serial.print(";");
+    //Fallback error message
     } else {
       Serial.print(F("UNC|"));
       Serial.print(command);

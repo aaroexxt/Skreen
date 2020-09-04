@@ -4,6 +4,8 @@ Todos:
 - make easier to use login path for phone
 -Settings page what it can have: modify light schedule, modify device config for lights, check status of what's connected and server uptime etc
 - speech commands!! annyang? (replace Temp?F on client)
+- option to turn off leds before sending commands arduino (to save power)
+
 
 done:
 

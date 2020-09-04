@@ -1212,7 +1212,7 @@ ARDUrouter.get("/settings/ledUpdateCount/:newCount", (req, res) => {
 });
 
 ARDUrouter.get("/realtime/volume", (req, res) => {
-	arduinoUtils.sendCommand("cv","", "current_volume").then(value => { //Don't specify return value so it will match anything
+	arduinoUtils.sendCommand("cv","", "cv").then(value => { //Don't specify return value so it will match anything
 		res.end(RequestHandler.SUCCESS(value));
 	}).catch(e => {
 		res.end(RequestHandler.FAILURE(e));
@@ -1220,7 +1220,7 @@ ARDUrouter.get("/realtime/volume", (req, res) => {
 });
 
 ARDUrouter.get("/realtime/frequency", (req, res) => {
-	arduinoUtils.sendCommand("cf", "", "current_frequency").then(value => { //Don't specify return value so it will match anything
+	arduinoUtils.sendCommand("cf", "", "cf").then(value => { //Don't specify return value so it will match anything
 		res.end(RequestHandler.SUCCESS(value));
 	}).catch(e => {
 		res.end(RequestHandler.FAILURE(e));
